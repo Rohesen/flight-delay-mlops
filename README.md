@@ -40,29 +40,29 @@ An end-to-end pipeline that predicts whether an **Indian domestic flight will de
 
 ```mermaid
 flowchart LR
-    SRC([✈️ Flight-ops extracts]):::src --> V1
+    SRC(["✈️ Flight-ops extracts"]):::src --> V1
 
     subgraph S1["① DATA VERSIONING"]
-      V1[v1.0 raw] --> V2[v1.1 cleaned] --> V3[v2.0 schema change] --> V4[v3.0 drift]
+      V1["v1.0 raw"] --> V2["v1.1 cleaned"] --> V3["v2.0 schema change"] --> V4["v3.0 drift"]
     end
 
     subgraph S2["② FEATURE STORE"]
-      OFF[(Offline · Parquet<br/>full history)] -->|materialize| ON[(Online · SQLite<br/>latest values)]
+      OFF[("Offline · Parquet<br/>full history")] -->|"materialize"| ON[("Online · SQLite<br/>latest values")]
     end
 
     subgraph S3["③ MLFLOW"]
-      EXP[Experiments<br/>params · metrics · artifacts] --> REG{{Registry<br/>@champion}}
+      EXP["Experiments<br/>params · metrics · artifacts"] --> REG{{"Registry<br/>alias: champion"}}
     end
 
     subgraph S4["④ SERVING"]
-      API[[Prediction service<br/>FastAPI · Streamlit]]
+      API[["Prediction service<br/>FastAPI · Streamlit"]]
     end
 
-    V3 -->|point-in-time<br/>training set| OFF
+    V3 -->|"point-in-time<br/>training set"| OFF
     OFF --> EXP
     REG --> API
     ON --> API
-    API --> USER([📊 Ops dashboard]):::src
+    API --> USER(["📊 Ops dashboard"]):::src
 
     classDef src fill:#1A1030,stroke:#FF2BD6,stroke-width:2px,color:#FFFFFF
     classDef default fill:#0E1424,stroke:#00F0FF,stroke-width:1.5px,color:#E6F1FF
