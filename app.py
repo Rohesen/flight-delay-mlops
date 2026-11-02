@@ -421,9 +421,9 @@ with tabs[1]:
         st.dataframe(vdf, hide_index=True, width="stretch")
     with r:
         st.subheader("Lineage")
-        gv("digraph{rankdir=TB;bgcolor=transparent;node[shape=box style='rounded,filled' fillcolor='#111A2E' color='#38BDF8' fontcolor='#E8EEF7' fontname=Inter fontsize=11];"
+        gv('digraph{rankdir=TB;bgcolor=transparent;node[shape=box style="rounded,filled" fillcolor="#111A2E" color="#38BDF8" fontcolor="#E8EEF7" fontname=Inter fontsize=11];'
                           + "".join(f'"{m["tag"]}"[label="{m["tag"]}\\nmd5 {m["outs"][0]["md5"][:8]}\\n{m["rows"]:,} rows"];' for m in versions)
-                          + "edge[color='#C084FC'];" + "".join(f'"{m["parent"]}"->"{m["tag"]}";' for m in versions if m["parent"]) + "}")
+                          + 'edge[color="#C084FC"];' + "".join(f'"{m["parent"]}"->"{m["tag"]}";' for m in versions if m["parent"]) + "}")
 
     st.subheader("🔍 Checkout & compare two versions")
     tags = [m["tag"] for m in versions]
