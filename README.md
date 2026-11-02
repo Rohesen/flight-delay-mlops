@@ -86,6 +86,6 @@ Edit names in `src/config.py` → `TEAM`.
 | Member | Part |
 |--------|------|
 | Member 1 — Rohesen Raj (2025NS04108) | Data Versioning |
-| Member 2 | Feature Engineering & Feature Store |
-| Member 3 | Experiment Tracking & Model Registry |
-| Member 4 | Prediction Service & Lineage |
+| Member 2 — Akriti Adarsh (2025NS04070) | Feature Engineering & Feature Store |
+| Member 3 — Chelsa Sam (2025NS04086) | Experiment Tracking & Model Registry |
+| Member 4 — Amogh J Putanikar (2025NS04023) | Prediction Service & Lineage |

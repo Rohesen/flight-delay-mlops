@@ -37,10 +37,10 @@ STORE_FEATURES = [
 TEAM = [
     {"member": "Member 1", "name": "Rohesen Raj", "id": "2025NS04108",
      "part": "Data Versioning (DVC)"},
-    {"member": "Member 2", "name": "Member 2", "id": "",
+    {"member": "Member 2", "name": "Akriti Adarsh", "id": "2025NS04070",
      "part": "Feature Engineering & Feature Store"},
-    {"member": "Member 3", "name": "Member 3", "id": "",
+    {"member": "Member 3", "name": "Chelsa Sam", "id": "2025NS04086",
      "part": "Experiment Tracking & Model Registry (MLflow)"},
-    {"member": "Member 4", "name": "Member 4", "id": "",
+    {"member": "Member 4", "name": "Amogh J Putanikar", "id": "2025NS04023",
      "part": "Prediction Service & Lineage"},
 ]

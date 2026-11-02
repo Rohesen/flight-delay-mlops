@@ -4,7 +4,7 @@ Camera on, screen shared on the Streamlit app. ~130 spoken words each. Open the 
 
 ---
 
-## Member 1 — Data Versioning (tab ①)
+## Member 1 (Rohesen Raj) — Data Versioning (tab ①)
 
 *[Overview tab, architecture diagram]*
 "We built an end-to-end pipeline that predicts whether an Indian domestic flight will be delayed by more than
@@ -22,7 +22,7 @@ Now, how do we turn this data into features?"
 
 ---
 
-## Member 2 — Feature Store (tab ②)
+## Member 2 (Akriti Adarsh) — Feature Store (tab ②)
 
 "I built the feature store. *[Feature view cards]* Features are defined once, in three views: airport,
 carrier and route, each with a time-to-live.
@@ -40,7 +40,7 @@ Next, how we track experiments."
 
 ---
 
-## Member 3 — Experiment Tracking & Registry (tab ③)
+## Member 3 (Chelsa Sam) — Experiment Tracking & Registry (tab ③)
 
 "I handled experiment tracking with MLflow. *[Launch form]* Let me train a gradient boosting model on data
 version 2.0. *[Click Train]* Every run logs its parameters, metrics, the model with its signature, and — crucially —
@@ -55,7 +55,7 @@ Now let's serve the champion."
 
 ---
 
-## Member 4 — Prediction Service & Lineage (tab ④)
+## Member 4 (Amogh J Putanikar) — Prediction Service & Lineage (tab ④)
 
 "I built the prediction service. *[Champion KPIs]* It resolves the model through the registry alias — here,
 version one, trained on data v2.0.
