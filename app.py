@@ -216,7 +216,9 @@ def gv(dot: str, **kw):
                  "#E8EEF7": T["text"], "#7DD3FC": T["acc2"], "#B6C2D6": T["muted"], "#64748B": T["muted"],
                  "#C084FC": MAGENTA, "#34D399": GREEN, "#FBBF24": AMBER}.items():
         dot = dot.replace(a, b)
-    st.graphviz_chart(dot, **kw)
+    # natural size: a 'stretch' graph inside a hidden tab is measured at 0 px and renders blank
+    kw.pop("width", None)
+    st.graphviz_chart(dot, width="content")
 
 
 # ---------------------------------------------------------------- bootstrap
