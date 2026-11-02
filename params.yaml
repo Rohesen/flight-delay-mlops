@@ -1,0 +1,15 @@
+data:
+  seed: 42
+  versions: [v1.0, v1.1, v2.0, v3.0]
+features:
+  serving_version: v2.0
+  origin_window_days: 7
+  carrier_window_days: 30
+  route_window_days: 30
+train:
+  split: time_based_80_20
+  champion_metric: roc_auc
+  models:
+    logistic_regression: {C: 1.0}
+    random_forest: {n_estimators: 150, max_depth: 12}
+    gradient_boosting: {learning_rate: 0.08, max_depth: 6}

@@ -1,0 +1,77 @@
+schema: '2.0'
+stages:
+  data:
+    cmd: python -m src.pipeline --stage data
+    deps:
+    - path: src/data_generation.py
+      hash: md5
+      md5: b3325a3d2d5a1a150e3f0e6961c70851
+      size: 5576
+    - path: src/versioning.py
+      hash: md5
+      md5: 8b4179d297cf22b64d4a4192283f07eb
+      size: 4328
+    params:
+      params.yaml:
+        data.seed: 42
+    outs:
+    - path: data/.versions
+      hash: md5
+      md5: e75a32e8847a2bcc1277ed016db4e32b.dir
+      size: 6785230
+      nfiles: 4
+    - path: data/raw/flights.csv
+      hash: md5
+      md5: daf879e85b5c7dea7a2896f8f2e75607
+      size: 1907734
+  features:
+    cmd: python -m src.pipeline --stage features
+    deps:
+    - path: data/raw/flights.csv
+      hash: md5
+      md5: daf879e85b5c7dea7a2896f8f2e75607
+      size: 1907734
+    - path: src/feature_store.py
+      hash: md5
+      md5: f820e376cb6ecd4a964f196b0d5b12d2
+      size: 8742
+    params:
+      params.yaml:
+        features.serving_version: v2.0
+    outs:
+    - path: data/feature_store
+      hash: md5
+      md5: 6a8781a93ebf4b8a9d4f0ecadb4a354f.dir
+      size: 111459
+      nfiles: 5
+  train:
+    cmd: python -m src.pipeline --stage train
+    deps:
+    - path: data/feature_store
+      hash: md5
+      md5: 6a8781a93ebf4b8a9d4f0ecadb4a354f.dir
+      size: 111459
+      nfiles: 5
+    - path: src/train.py
+      hash: md5
+      md5: d7648d28771b1382ac3d7ae521230cdc
+      size: 10638
+    params:
+      params.yaml:
+        train:
+          split: time_based_80_20
+          champion_metric: roc_auc
+          models:
+            logistic_regression:
+              C: 1.0
+            random_forest:
+              n_estimators: 150
+              max_depth: 12
+            gradient_boosting:
+              learning_rate: 0.08
+              max_depth: 6
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 3e859ceca8ff9713dec52562e304a3b4
+      size: 86

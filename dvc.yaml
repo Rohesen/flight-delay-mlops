@@ -1,0 +1,31 @@
+stages:
+  data:
+    cmd: python -m src.pipeline --stage data
+    deps:
+      - src/data_generation.py
+      - src/versioning.py
+    params:
+      - data.seed
+    outs:
+      - data/raw/flights.csv
+      - data/.versions:
+          cache: true
+  features:
+    cmd: python -m src.pipeline --stage features
+    deps:
+      - data/raw/flights.csv
+      - src/feature_store.py
+    params:
+      - features.serving_version
+    outs:
+      - data/feature_store
+  train:
+    cmd: python -m src.pipeline --stage train
+    deps:
+      - data/feature_store
+      - src/train.py
+    params:
+      - train
+    metrics:
+      - metrics.json:
+          cache: false

@@ -1,0 +1,6 @@
+{
+  "champion_version": 1,
+  "roc_auc": 0.6696,
+  "f1": 0.3389,
+  "accuracy": 0.6964
+}
