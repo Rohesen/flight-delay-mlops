@@ -99,6 +99,16 @@ section[data-testid="stSidebar"] h3 {font-size:1.15rem !important;}
 div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, .stNumberInput input, .stTextInput input,
 div[data-baseweb="base-input"], div[data-baseweb="popover"] ul, div[data-baseweb="popover"] li,
 div[data-baseweb="calendar"] {background:var(--panel) !important; border-color:var(--border) !important; color:var(--text);}
+.stApp [data-testid="stSelectbox"] div[role], .stApp [data-testid="stMultiSelect"] div[role],
+.stApp [data-testid="stDateInput"] div[data-rac], .stApp [data-testid="stNumberInput"] div[data-rac],
+.stApp [data-testid="stTextInput"] div[data-rac], .stApp [data-testid="stNumberInput"] input,
+.stApp [data-testid="stTextInput"] input, .stApp [data-testid="stDateInput"] input {
+       background-color:var(--panel) !important; border-color:var(--border) !important; color:var(--text) !important;}
+.stApp [data-testid="stSelectbox"] svg, .stApp [data-testid="stDateInput"] svg {color:var(--muted); fill:currentColor;}
+[role="listbox"], [role="option"], [role="dialog"], div[data-rac][role="grid"] {background-color:var(--panel) !important;
+       color:var(--text) !important;}
+[role="option"]:hover, [role="option"][data-focused], [role="option"][aria-selected="true"] {
+       background-color:rgba(var(--acc-rgb),.14) !important;}
 /* ---- 3D depth ---- */
 .hero {padding:28px 34px; border-radius:18px; margin-bottom:24px;
        background: linear-gradient(120deg, var(--h1) 0%%, var(--h2) 100%%);
@@ -186,16 +196,18 @@ div[data-testid="stPlotlyChart"], div[data-testid="stGraphVizChart"] {box-shadow
 </style>"""
 st.markdown(_css, unsafe_allow_html=True)
 
-_plotly_chart = st.plotly_chart
+from streamlit.delta_generator import DeltaGenerator  # noqa: E402
 
+if not getattr(DeltaGenerator.plotly_chart, "_themed", False):
+    _orig_plotly_chart = DeltaGenerator.plotly_chart
 
-def _themed_plotly_chart(fig, *args, **kwargs):
-    """Use our own Plotly template instead of Streamlit's (which follows the app's dark base)."""
-    kwargs.setdefault("theme", None)
-    return _plotly_chart(fig, *args, **kwargs)
+    def _themed_plotly_chart(self, fig, *args, **kwargs):
+        """Use our own Plotly template instead of Streamlit's (which follows the app's dark base)."""
+        kwargs.setdefault("theme", None)
+        return _orig_plotly_chart(self, fig, *args, **kwargs)
 
-
-st.plotly_chart = _themed_plotly_chart
+    _themed_plotly_chart._themed = True
+    DeltaGenerator.plotly_chart = _themed_plotly_chart
 
 
 def gv(dot: str, **kw):
