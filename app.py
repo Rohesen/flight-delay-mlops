@@ -22,75 +22,66 @@ from src.feature_store import FEATURE_VIEWS, FeatureStore
 
 st.set_page_config(page_title="Flight Delay MLOps", page_icon="✈️", layout="wide")
 
-# ---- Neon palette ---------------------------------------------------------
-NAVY, TEAL, AMBER, RED, GREEN, GREY = "#E6F1FF", "#00F0FF", "#FFC300", "#FF3B6B", "#39FF88", "#B26BFF"
-MAGENTA, BG, PANEL, BORDER, MUTED = "#FF2BD6", "#070B14", "#0E1424", "#1E2A44", "#8892B0"
-PLOT = dict(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(14,20,36,.55)",
-            font=dict(family="Space Grotesk, Inter, sans-serif", color=NAVY),
-            margin=dict(l=10, r=10, t=44, b=10))
+# ---- Refined palette (dark navy, calm accents) ------------------------------
+NAVY, TEAL, AMBER, RED, GREEN, GREY = "#E8EEF7", "#38BDF8", "#FBBF24", "#F87171", "#34D399", "#A78BFA"
+MAGENTA, BG, PANEL, BORDER, MUTED = "#C084FC", "#0B1220", "#111A2E", "#22304D", "#94A3B8"
+PLOT = dict(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(17,26,46,.6)",
+            font=dict(family="Inter, Segoe UI, sans-serif", color=NAVY, size=13),
+            title_font=dict(family="Source Serif 4, Georgia, serif", size=17),
+            margin=dict(l=10, r=10, t=48, b=10))
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Space+Grotesk:wght@400;500;700&display=swap');
-html, body, [class*="css"], .stMarkdown, p, label, li {font-family:'Space Grotesk', sans-serif;}
-.stApp {background: radial-gradient(1200px 600px at 10% -10%, rgba(255,43,214,.10), transparent 60%),
-                    radial-gradient(1000px 500px at 100% 0%, rgba(0,240,255,.10), transparent 55%), #070B14;}
-.block-container {padding-top: 1.6rem; max-width: 1380px;}
-h1, h2, h3 {font-family:'Orbitron', sans-serif !important; letter-spacing:.02em;}
-h2 {color:#E6F1FF; text-shadow:0 0 18px rgba(0,240,255,.35);}
-h3 {color:#00F0FF !important; text-shadow:0 0 12px rgba(0,240,255,.35);}
-section[data-testid="stSidebar"] {background: linear-gradient(180deg,#0B1020 0%,#0E1424 100%);
-       border-right:1px solid #1E2A44;}
-.hero {position:relative; overflow:hidden; padding:28px 32px; border-radius:20px; margin-bottom:20px;
-       background: linear-gradient(115deg, rgba(255,43,214,.22), rgba(157,78,221,.18) 45%, rgba(0,240,255,.22));
-       border:1px solid rgba(0,240,255,.45);
-       box-shadow: 0 0 28px rgba(0,240,255,.25), inset 0 0 40px rgba(255,43,214,.12);}
-.hero:before {content:""; position:absolute; inset:-2px; background:linear-gradient(90deg,#FF2BD6,#00F0FF,#39FF88,#FF2BD6);
-       background-size:300% 100%; animation:flow 8s linear infinite; height:3px; top:0;}
-@keyframes flow {0%{background-position:0% 0} 100%{background-position:300% 0}}
-.hero h1 {font-family:'Orbitron', sans-serif; font-size:2.05rem; margin:0 0 8px 0; color:#fff;
-          text-shadow:0 0 10px #00F0FF, 0 0 26px rgba(255,43,214,.6);}
-.hero p {color:#C9D6F2; margin:0; font-size:1.04rem;}
-.pill {display:inline-block; background:rgba(7,11,20,.55); border:1px solid #00F0FF; color:#00F0FF;
-       padding:3px 12px; border-radius:20px; font-size:.8rem; margin:12px 6px 0 0;
-       box-shadow:0 0 10px rgba(0,240,255,.35);}
-.pill.m {border-color:#FF2BD6; color:#FF2BD6; box-shadow:0 0 10px rgba(255,43,214,.35);}
-.pill.g {border-color:#39FF88; color:#39FF88; box-shadow:0 0 10px rgba(57,255,136,.35);}
-.pill.y {border-color:#FFC300; color:#FFC300; box-shadow:0 0 10px rgba(255,195,0,.35);}
-.card {background:rgba(14,20,36,.85); border:1px solid #1E2A44; border-radius:16px; padding:16px 18px; height:100%;
-       transition: all .25s ease; backdrop-filter: blur(6px);}
-.card:hover {border-color:#FF2BD6; box-shadow:0 0 22px rgba(255,43,214,.35); transform:translateY(-2px);}
-.card h4 {margin:0 0 6px 0; color:#00F0FF; font-size:1rem; text-shadow:0 0 8px rgba(0,240,255,.45);}
-.card p {margin:0; color:#AEB9D6; font-size:.9rem;}
-.kpi {background:rgba(14,20,36,.9); border:1px solid #1E2A44; border-radius:16px; padding:14px 16px;
-      border-top:2px solid #00F0FF; box-shadow:0 0 16px rgba(0,240,255,.15);}
-.kpi:nth-child(odd) {border-top-color:#FF2BD6;}
-.kpi .v {font-family:'Orbitron', sans-serif; font-size:1.55rem; font-weight:800; color:#fff; line-height:1.15;
-         text-shadow:0 0 12px rgba(0,240,255,.55);}
-.kpi .l {font-size:.74rem; color:#8892B0; text-transform:uppercase; letter-spacing:.08em; margin-top:4px;}
-.owner {display:inline-block; font-size:.78rem; color:#39FF88; font-weight:700; text-transform:uppercase;
-        letter-spacing:.08em; border:1px solid #39FF88; padding:3px 12px; border-radius:20px;
-        box-shadow:0 0 12px rgba(57,255,136,.35); margin-bottom:6px;}
-.lesson {background:rgba(255,195,0,.07); border:1px solid rgba(255,195,0,.35); border-left:4px solid #FFC300;
-         padding:12px 16px; border-radius:10px; color:#FFE7A3; font-size:.93rem; margin:8px 0;}
-.good {background:rgba(57,255,136,.07); border:1px solid rgba(57,255,136,.35); border-left:4px solid #39FF88;
-       padding:12px 16px; border-radius:10px; color:#C6FFDD; font-size:.93rem; margin:8px 0;}
-.bad {background:rgba(255,59,107,.08); border:1px solid rgba(255,59,107,.4); border-left:4px solid #FF3B6B;
-      padding:12px 16px; border-radius:10px; color:#FFC2D1; font-size:.93rem; margin:8px 0;}
-.mono {font-family: ui-monospace, Menlo, monospace; font-size:.85rem; color:#00F0FF;}
-div[data-testid="stTabs"] button p {font-family:'Orbitron', sans-serif; font-size:.9rem; font-weight:600;}
-div[data-testid="stTabs"] button[aria-selected="true"] p {color:#00F0FF; text-shadow:0 0 10px rgba(0,240,255,.7);}
-div[data-baseweb="tab-highlight"] {background:linear-gradient(90deg,#FF2BD6,#00F0FF) !important; height:3px;
-       box-shadow:0 0 12px #00F0FF;}
-.stButton > button, .stDownloadButton > button {border-radius:12px; border:1px solid #00F0FF; color:#00F0FF;
-       background:rgba(0,240,255,.06); transition:all .2s ease; font-weight:600;}
-.stButton > button:hover, .stDownloadButton > button:hover {box-shadow:0 0 18px rgba(0,240,255,.55); color:#fff;
-       border-color:#00F0FF;}
-.stButton > button[kind="primary"] {background:linear-gradient(90deg,#FF2BD6,#9D4EDD 50%,#00F0FF); color:#fff;
-       border:none; box-shadow:0 0 18px rgba(255,43,214,.45);}
-.stButton > button[kind="primary"]:hover {box-shadow:0 0 28px rgba(0,240,255,.7);}
-div[data-testid="stDataFrame"] {border:1px solid #1E2A44; border-radius:12px;}
-div[data-testid="stExpander"] {border:1px solid #1E2A44; border-radius:12px; background:rgba(14,20,36,.6);}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap');
+html, body, [class*="css"], .stMarkdown, p, label, li, input, textarea, button {font-family:'Inter', 'Segoe UI', sans-serif;}
+.stApp {background: radial-gradient(1100px 520px at 0% -10%, rgba(56,189,248,.07), transparent 60%),
+                    radial-gradient(900px 480px at 100% 0%, rgba(167,139,250,.07), transparent 55%), #0B1220;}
+.block-container {padding-top: 1.6rem; max-width: 1360px;}
+h1, h2, h3 {font-family:'Source Serif 4', Georgia, serif !important; font-weight:600 !important; letter-spacing:0;}
+h2 {color:#F1F5FB !important; font-size:1.75rem !important;}
+h3 {color:#BFDBFE !important; font-size:1.3rem !important;}
+section[data-testid="stSidebar"] {background:#0E172A; border-right:1px solid #22304D;}
+section[data-testid="stSidebar"] h3 {font-size:1.15rem !important;}
+.hero {padding:28px 34px; border-radius:16px; margin-bottom:22px;
+       background: linear-gradient(120deg, #13203A 0%, #182A4A 55%, #1C2F52 100%);
+       border:1px solid #2B3D63; border-top:3px solid #38BDF8;
+       box-shadow: 0 10px 30px rgba(0,0,0,.35);}
+.hero h1 {font-family:'Source Serif 4', Georgia, serif; font-weight:700; font-size:2.1rem; margin:0 0 8px 0; color:#F8FAFC;}
+.hero p {color:#CBD5E1; margin:0; font-size:1.03rem; line-height:1.55;}
+.pill {display:inline-block; background:rgba(56,189,248,.10); border:1px solid rgba(56,189,248,.45); color:#BAE6FD;
+       padding:3px 12px; border-radius:20px; font-size:.8rem; font-weight:500; margin:14px 6px 0 0;}
+.pill.m {background:rgba(192,132,252,.10); border-color:rgba(192,132,252,.45); color:#E9D5FF;}
+.pill.g {background:rgba(52,211,153,.10); border-color:rgba(52,211,153,.45); color:#A7F3D0;}
+.pill.y {background:rgba(251,191,36,.10); border-color:rgba(251,191,36,.45); color:#FDE68A;}
+.card {background:#111A2E; border:1px solid #22304D; border-radius:14px; padding:16px 18px; height:100%;
+       transition: border-color .2s ease, transform .2s ease;}
+.card:hover {border-color:#38BDF8; transform:translateY(-1px);}
+.card h4 {font-family:'Source Serif 4', Georgia, serif; font-weight:600; margin:0 0 6px 0; color:#7DD3FC; font-size:1.05rem;}
+.card p {margin:0; color:#B6C2D6; font-size:.92rem; line-height:1.5;}
+.kpi {background:#111A2E; border:1px solid #22304D; border-radius:14px; padding:14px 18px; border-left:3px solid #38BDF8;}
+.kpi .v {font-family:'Inter', sans-serif; font-size:1.6rem; font-weight:700; color:#F8FAFC; line-height:1.15;
+         font-variant-numeric: tabular-nums;}
+.kpi .l {font-size:.74rem; color:#94A3B8; text-transform:uppercase; letter-spacing:.07em; margin-top:4px; font-weight:500;}
+.owner {display:inline-block; font-size:.78rem; color:#A7F3D0; font-weight:600; letter-spacing:.04em;
+        background:rgba(52,211,153,.10); border:1px solid rgba(52,211,153,.4); padding:3px 12px; border-radius:20px;
+        margin-bottom:6px;}
+.lesson {background:rgba(251,191,36,.06); border:1px solid rgba(251,191,36,.28); border-left:4px solid #FBBF24;
+         padding:12px 16px; border-radius:10px; color:#FDE9B0; font-size:.94rem; line-height:1.55; margin:8px 0;}
+.good {background:rgba(52,211,153,.06); border:1px solid rgba(52,211,153,.28); border-left:4px solid #34D399;
+       padding:12px 16px; border-radius:10px; color:#C8F5E2; font-size:.94rem; line-height:1.55; margin:8px 0;}
+.bad {background:rgba(248,113,113,.07); border:1px solid rgba(248,113,113,.3); border-left:4px solid #F87171;
+      padding:12px 16px; border-radius:10px; color:#FBD0D0; font-size:.94rem; line-height:1.55; margin:8px 0;}
+.mono {font-family:'JetBrains Mono', ui-monospace, Menlo, monospace; font-size:.84rem; color:#7DD3FC;}
+div[data-testid="stTabs"] button p {font-family:'Inter', sans-serif; font-size:.95rem; font-weight:600;}
+div[data-testid="stTabs"] button[aria-selected="true"] p {color:#7DD3FC;}
+div[data-baseweb="tab-highlight"] {background:#38BDF8 !important; height:3px;}
+.stButton > button, .stDownloadButton > button {border-radius:10px; border:1px solid #38BDF8; color:#BAE6FD;
+       background:rgba(56,189,248,.06); font-weight:600; transition:background .2s ease;}
+.stButton > button:hover, .stDownloadButton > button:hover {background:rgba(56,189,248,.16); color:#fff; border-color:#7DD3FC;}
+.stButton > button[kind="primary"] {background:#2563EB; color:#fff; border:1px solid #3B82F6;}
+.stButton > button[kind="primary"]:hover {background:#1D4ED8;}
+div[data-testid="stDataFrame"] {border:1px solid #22304D; border-radius:10px;}
+div[data-testid="stExpander"] {border:1px solid #22304D; border-radius:10px; background:#0F1829;}
 </style>""", unsafe_allow_html=True)
 
 
@@ -148,7 +139,7 @@ with st.sidebar:
     st.caption("DSE ZG529 · Data Management for ML\nExperiential Learning Assignment")
     st.markdown("**Team**")
     for m in TEAM:
-        st.markdown(f"**{m['member']}** — {m['name']}  \n<span style='color:#00F0FF;font-size:.8rem'>{m['id']}</span> · <span style='color:#8892B0;font-size:.85rem'>{m['part']}</span>",
+        st.markdown(f"**{m['member']}** — {m['name']}  \n<span style='color:#38BDF8;font-size:.8rem'>{m['id']}</span> · <span style='color:#94A3B8;font-size:.85rem'>{m['part']}</span>",
                     unsafe_allow_html=True)
     st.divider()
     try:
@@ -196,18 +187,18 @@ with tabs[0]:
     with left:
         st.subheader("Architecture")
         st.graphviz_chart("""
-        digraph G { rankdir=LR; bgcolor="transparent"; node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=11 color="#2E3B5E" fillcolor="#0E1424" fontcolor="#E6F1FF"];
-          edge [color="#5A6B95" fontcolor="#AEB9D6"];
-          src [label="Source systems\\n(flight ops extracts)" fillcolor="#1A1030" color="#FF2BD6"];
-          subgraph cluster1 {label="① Data Versioning" style="rounded,dashed" color="#00F0FF" fontcolor="#00F0FF" fontname="Helvetica-Bold";
+        digraph G { rankdir=LR; bgcolor="transparent"; node [shape=box style="rounded,filled" fontname="Inter" fontsize=11 color="#2B3D63" fillcolor="#111A2E" fontcolor="#E8EEF7"];
+          edge [color="#64748B" fontcolor="#B6C2D6"];
+          src [label="Source systems\\n(flight ops extracts)" fillcolor="#1C2340" color="#C084FC"];
+          subgraph cluster1 {label="① Data Versioning" style="rounded,dashed" color="#38BDF8" fontcolor="#38BDF8" fontname="Inter";
             dvc [label="Content-addressed cache\\nMD5 → bytes"]; meta [label=".dvc pointers in Git\\nv1.0 → v1.1 → v2.0 → v3.0"]; }
-          subgraph cluster2 {label="② Feature Store" style="rounded,dashed" color="#39FF88" fontcolor="#39FF88" fontname="Helvetica-Bold";
+          subgraph cluster2 {label="② Feature Store" style="rounded,dashed" color="#34D399" fontcolor="#34D399" fontname="Inter";
             off [label="Offline store (Parquet)\\nfull feature history"]; on [label="Online store (SQLite)\\nlatest value per entity"]; }
-          subgraph cluster3 {label="③ MLflow" style="rounded,dashed" color="#FFC300" fontcolor="#FFC300" fontname="Helvetica-Bold";
+          subgraph cluster3 {label="③ MLflow" style="rounded,dashed" color="#FBBF24" fontcolor="#FBBF24" fontname="Inter";
             exp [label="Experiment tracking\\nparams · metrics · artifacts"]; reg [label="Model registry\\n@champion alias"]; }
-          subgraph cluster4 {label="④ Serving" style="rounded,dashed" color="#FF2BD6" fontcolor="#FF2BD6" fontname="Helvetica-Bold";
+          subgraph cluster4 {label="④ Serving" style="rounded,dashed" color="#C084FC" fontcolor="#C084FC" fontname="Inter";
             api [label="Prediction service\\nFastAPI / Streamlit"]; }
-          user [label="Client / ops dashboard" fillcolor="#1A1030" color="#FF2BD6"];
+          user [label="Client / ops dashboard" fillcolor="#1C2340" color="#C084FC"];
           src -> dvc -> meta; dvc -> off [label=" point-in-time\\n training set" fontsize=9];
           off -> on [label=" materialize" fontsize=9]; off -> exp -> reg; reg -> api; on -> api; api -> user;
         }""", width="stretch")
@@ -256,9 +247,9 @@ with tabs[1]:
         st.dataframe(vdf, hide_index=True, width="stretch")
     with r:
         st.subheader("Lineage")
-        st.graphviz_chart("digraph{rankdir=TB;bgcolor=transparent;node[shape=box style='rounded,filled' fillcolor='#0E1424' color='#00F0FF' fontcolor='#E6F1FF' fontname=Helvetica fontsize=11];"
+        st.graphviz_chart("digraph{rankdir=TB;bgcolor=transparent;node[shape=box style='rounded,filled' fillcolor='#111A2E' color='#38BDF8' fontcolor='#E8EEF7' fontname=Inter fontsize=11];"
                           + "".join(f'"{m["tag"]}"[label="{m["tag"]}\\nmd5 {m["outs"][0]["md5"][:8]}\\n{m["rows"]:,} rows"];' for m in versions)
-                          + "edge[color='#FF2BD6'];" + "".join(f'"{m["parent"]}"->"{m["tag"]}";' for m in versions if m["parent"]) + "}")
+                          + "edge[color='#C084FC'];" + "".join(f'"{m["parent"]}"->"{m["tag"]}";' for m in versions if m["parent"]) + "}")
 
     st.subheader("🔍 Checkout & compare two versions")
     tags = [m["tag"] for m in versions]
@@ -591,12 +582,12 @@ with tabs[4]:
     with l2:
         st.subheader("Prediction lineage")
         L = res["lineage"]
-        st.graphviz_chart(f"""digraph{{rankdir=TB;bgcolor=transparent;node[shape=box style="rounded,filled" fontname=Helvetica fontsize=10 fillcolor="#0E1424" color="#2E3B5E" fontcolor="#E6F1FF"]; edge[color="#5A6B95" fontcolor="#AEB9D6"];
-          d[label="Dataset {L['data_version']}\\nmd5 {L['data_md5'][:12]}" color="#00F0FF"];
-          f[label="Feature store\\nvalues as of {list(res['feature_timestamps'].values())[0]}" color="#39FF88"];
-          r[label="MLflow run\\n{L['run_id'][:12]}\\n{L['model_type']}" color="#FFC300"];
-          m[label="{REGISTERED_MODEL}\\nv{L['version']} @{L['alias']}" color="#FFC300"];
-          p[label="Prediction\\nP(delay)={res['delay_probability']:.3f}\\n{res['latency_ms']} ms" color="#FF2BD6" penwidth=2];
+        st.graphviz_chart(f"""digraph{{rankdir=TB;bgcolor=transparent;node[shape=box style="rounded,filled" fontname=Inter fontsize=10 fillcolor="#111A2E" color="#2B3D63" fontcolor="#E8EEF7"]; edge[color="#64748B" fontcolor="#B6C2D6"];
+          d[label="Dataset {L['data_version']}\\nmd5 {L['data_md5'][:12]}" color="#38BDF8"];
+          f[label="Feature store\\nvalues as of {list(res['feature_timestamps'].values())[0]}" color="#34D399"];
+          r[label="MLflow run\\n{L['run_id'][:12]}\\n{L['model_type']}" color="#FBBF24"];
+          m[label="{REGISTERED_MODEL}\\nv{L['version']} @{L['alias']}" color="#FBBF24"];
+          p[label="Prediction\\nP(delay)={res['delay_probability']:.3f}\\n{res['latency_ms']} ms" color="#C084FC" penwidth=2];
           d->r; d->f; f->r[style=dashed label=" training set" fontsize=9]; r->m; m->p; f->p[label=" online lookup" fontsize=9]; }}""",
                           width="stretch")
         st.code("""# REST API (FastAPI) — run: uvicorn serving.api:app --port 8000
@@ -631,5 +622,5 @@ curl -X POST localhost:8000/predict -H "Content-Type: application/json" \\
                      column_config={"delay_probability": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.2f")})
         st.download_button("Download predictions (CSV)", bt.to_csv(index=False), "predictions.csv", "text/csv")
 
-st.markdown("<br><center style='color:#8892B0;font-size:.8rem;letter-spacing:.05em'>DSE ZG529 · Data Management for Machine Learning · "
+st.markdown("<br><center style='color:#94A3B8;font-size:.8rem;letter-spacing:.05em'>DSE ZG529 · Data Management for Machine Learning · "
             "BITS Pilani WILP · Experiential Learning Assignment</center>", unsafe_allow_html=True)
