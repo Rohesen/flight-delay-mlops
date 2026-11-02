@@ -75,3 +75,22 @@ def batch_predict(df: pd.DataFrame, store: FeatureStore | None = None) -> pd.Dat
 
 
 AIRPORT_CODES = list(AIRPORTS)
+
+
+def risk_grid(carrier: str, origin: str, dest: str, day: pd.Timestamp, hours, weathers,
+              store: FeatureStore | None = None):
+    """P(delay) over a departure-hour x weather grid in ONE batched model call."""
+    store = store or FeatureStore()
+    info = champion_info()
+    model = _load_cached(setup_mlflow(), str(info["version"]))
+    feats = {k: v for k, v in store.get_online_features(origin, dest, carrier).items() if not k.startswith("_")}
+    rows = []
+    for w in weathers:
+        for h in hours:
+            dep = pd.Timestamp(day) + pd.Timedelta(hours=int(h))
+            rows.append({"carrier": carrier, "origin": origin, "dest": dest, "dep_hour": dep.hour,
+                         "day_of_week": dep.dayofweek, "month": dep.month,
+                         "distance_km": round(_haversine(origin, dest), 1), "weather_index": float(w), **feats})
+    X = pd.DataFrame(rows)
+    X = X.astype({k: float for k in X.columns if k not in ("carrier", "origin", "dest")})
+    return model.predict_proba(X)[:, 1].reshape(len(weathers), len(hours))
