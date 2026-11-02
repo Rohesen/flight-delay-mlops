@@ -148,7 +148,7 @@ with st.sidebar:
     st.caption("DSE ZG529 · Data Management for ML\nExperiential Learning Assignment")
     st.markdown("**Team**")
     for m in TEAM:
-        st.markdown(f"**{m['member']}** — {m['name']}  \n<span style='color:#8892B0;font-size:.85rem'>{m['part']}</span>",
+        st.markdown(f"**{m['member']}** — {m['name']}  \n<span style='color:#00F0FF;font-size:.8rem'>{m['id']}</span> · <span style='color:#8892B0;font-size:.85rem'>{m['part']}</span>",
                     unsafe_allow_html=True)
     st.divider()
     try:
@@ -215,7 +215,7 @@ with tabs[0]:
         st.subheader("Who does what")
         for i, m in enumerate(TEAM):
             st.markdown(f'<div class="card" style="margin-bottom:10px"><h4>{["①","②","③","④"][i]} {m["part"]}</h4>'
-                        f'<p>{m["member"]} — {m["name"]}</p></div>', unsafe_allow_html=True)
+                        f'<p>{m["member"]} — {m["name"]} · <span class="mono">{m["id"]}</span></p></div>', unsafe_allow_html=True)
     st.subheader("Why this pipeline matters")
     a, b, c3 = st.columns(3)
     a.markdown('<div class="card"><h4>Reproducibility</h4><p>"Which data trained the model in production?" '

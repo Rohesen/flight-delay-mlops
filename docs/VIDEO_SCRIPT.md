@@ -4,7 +4,7 @@ Camera on, screen shared on the Streamlit app. ~130 spoken words each. Open the 
 
 ---
 
-## Member 1 (Rohesen Raj) — Data Versioning (tab ①)
+## Member 1 (Rohesen Rajkamal Maurya) — Data Versioning (tab ①)
 
 *[Overview tab, architecture diagram]*
 "We built an end-to-end pipeline that predicts whether an Indian domestic flight will be delayed by more than

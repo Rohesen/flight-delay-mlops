@@ -132,7 +132,7 @@ docs/VIDEO_SCRIPT.md    1-minute script for each team member
 
 | | Member | BITS ID | Owns |
 |:-:|---|---|---|
-| 🟦 | **Rohesen Raj** | 2025NS04108 | ① Data Versioning (DVC) |
+| 🟦 | **Rohesen Rajkamal Maurya** | 2025NS04108 | ① Data Versioning (DVC) |
 | 🟪 | **Akriti Adarsh** | 2025NS04070 | ② Feature Engineering & Feature Store |
 | 🟨 | **Chelsa Sam** | 2025NS04086 | ③ Experiment Tracking & Model Registry |
 | 🟩 | **Amogh J Putanikar** | 2025NS04023 | ④ Prediction Service & Lineage |

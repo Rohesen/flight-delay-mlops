@@ -52,7 +52,7 @@ STORE_FEATURES = [
 
 # Project team — edit names / BITS IDs here; they show up in the app.
 TEAM = [
-    {"member": "Member 1", "name": "Rohesen Raj", "id": "2025NS04108",
+    {"member": "Member 1", "name": "Rohesen Rajkamal Maurya", "id": "2025NS04108",
      "part": "Data Versioning (DVC)"},
     {"member": "Member 2", "name": "Akriti Adarsh", "id": "2025NS04070",
      "part": "Feature Engineering & Feature Store"},
