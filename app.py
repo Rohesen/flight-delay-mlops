@@ -101,8 +101,12 @@ def bootstrap() -> bool:
     from src.pipeline import run_all
     from src.train import registry_versions
     try:
-        ready = mlflow_db_path().exists() and versioning.list_versions() and not registry_versions().empty \
-            and FeatureStore().offline_metadata()
+        from src.predict import _load_cached, champion_info
+        from src.train import setup_mlflow
+        ready = bool(mlflow_db_path().exists() and versioning.list_versions()
+                     and FeatureStore().offline_metadata())
+        if ready:   # champion must actually load (artifacts present)
+            _load_cached(setup_mlflow(), str(champion_info()["version"]))
     except Exception:
         ready = False
     if not ready:
