@@ -84,7 +84,7 @@ html, body, [class*="css"], .stMarkdown, p, label, li, input, textarea, button {
                     radial-gradient(900px 480px at 100%% 0%%, rgba(var(--acc-rgb),.05), transparent 55%%), var(--bg);
         color:var(--text);}
 .stApp p, .stApp li, .stApp label, .stApp [data-testid="stMarkdownContainer"], .stApp [data-testid="stCaptionContainer"],
-.stApp [data-baseweb="select"] div, .stApp input, .stApp [data-testid="stSliderTickBarMin"],
+.stApp [data-baseweb="select"] div, .stApp [data-baseweb="select"] span, .stApp input, .stApp [data-testid="stSliderTickBarMin"],
 .stApp [data-testid="stSliderTickBarMax"], .stApp [data-testid="stSliderThumbValue"],
 .stApp [data-testid="stExpander"] summary, .stApp [data-testid="stWidgetLabel"] {color:var(--text);}
 .stApp [data-testid="stCaptionContainer"] {color:var(--muted);}
@@ -95,6 +95,7 @@ h2 {color:var(--head) !important; font-size:1.75rem !important;}
 h3 {color:var(--sub) !important; font-size:1.3rem !important;}
 section[data-testid="stSidebar"] {background:var(--side); border-right:1px solid var(--border);}
 section[data-testid="stSidebar"] h3 {font-size:1.15rem !important;}
+.stApp div[data-baseweb="select"] div, section[data-testid="stSidebar"] div[data-baseweb="select"] div,
 div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, .stNumberInput input, .stTextInput input,
 div[data-baseweb="base-input"], div[data-baseweb="popover"] ul, div[data-baseweb="popover"] li,
 div[data-baseweb="calendar"] {background:var(--panel) !important; border-color:var(--border) !important; color:var(--text);}
@@ -184,6 +185,17 @@ div[data-testid="stTabs"] button[aria-selected="true"] p {text-shadow:0 0 10px r
 div[data-testid="stPlotlyChart"], div[data-testid="stGraphVizChart"] {box-shadow:0 0 18px rgba(0,240,255,.12);}
 </style>"""
 st.markdown(_css, unsafe_allow_html=True)
+
+_plotly_chart = st.plotly_chart
+
+
+def _themed_plotly_chart(fig, *args, **kwargs):
+    """Use our own Plotly template instead of Streamlit's (which follows the app's dark base)."""
+    kwargs.setdefault("theme", None)
+    return _plotly_chart(fig, *args, **kwargs)
+
+
+st.plotly_chart = _themed_plotly_chart
 
 
 def gv(dot: str, **kw):
