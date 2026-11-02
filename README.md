@@ -39,22 +39,26 @@ An end-to-end pipeline that predicts whether an **Indian domestic flight will de
 ## 🧬 Architecture
 
 ```mermaid
-flowchart LR
+flowchart TB
     SRC(["✈️ Flight-ops extracts"]):::src --> V1
 
     subgraph S1["① DATA VERSIONING"]
+      direction LR
       V1["v1.0 raw"] --> V2["v1.1 cleaned"] --> V3["v2.0 schema change"] --> V4["v3.0 drift"]
     end
 
     subgraph S2["② FEATURE STORE"]
+      direction LR
       OFF[("Offline · Parquet<br/>full history")] -->|"materialize"| ON[("Online · SQLite<br/>latest values")]
     end
 
     subgraph S3["③ MLFLOW"]
+      direction LR
       EXP["Experiments<br/>params · metrics · artifacts"] --> REG{{"Registry<br/>alias: champion"}}
     end
 
     subgraph S4["④ SERVING"]
+      direction LR
       API[["Prediction service<br/>FastAPI · Streamlit"]]
     end
 
