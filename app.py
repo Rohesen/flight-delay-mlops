@@ -279,7 +279,7 @@ with tabs[0]:
                                     marker=dict(size=9, color=T["head"], line=dict(width=2, color=T["acc"])),
                                     textfont=dict(color=T["head"], size=12), showlegend=False, hoverinfo="text"))
         fig.update_geos(projection_type="orthographic", projection_rotation=dict(lon=79, lat=18),
-                        projection_scale=3.3, showland=True, landcolor=T["h2"], showocean=True,
+                        projection_scale=2.1, showland=True, landcolor=T["h2"], showocean=True,
                         oceancolor=T["bg"], showcountries=True, countrycolor=T["border"], coastlinecolor=T["muted"],
                         showlakes=False, bgcolor="rgba(0,0,0,0)", showframe=False)
         fig.update_layout(**{**PLOT, "margin": dict(l=0, r=0, t=10, b=0)}, height=430, dragmode="pan")
