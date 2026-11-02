@@ -667,18 +667,23 @@ with tabs[4]:
     s1, s2 = st.columns([1.7, 1])
     with s1:
         fig = go.Figure(go.Surface(x=hrs, y=wxs, z=Z, colorscale=[[0, T["acc"]], [.5, AMBER], [1, RED]],
-                                   cmin=0, cmax=1, opacity=.95, contours=dict(z=dict(show=True, usecolormap=True,
+                                   cmin=0, cmax=1, opacity=.97, contours=dict(z=dict(show=True, usecolormap=True,
                                    project_z=True, highlightcolor=T["head"])),
                                    colorbar=dict(title="P(delay)", tickformat=".0%", len=.7)))
         fig.add_trace(go.Scatter3d(x=[hr], y=[wx], z=[res["delay_probability"]], mode="markers",
                                    marker=dict(size=7, color=T["head"], line=dict(color=T["acc"], width=3)),
                                    name="this flight"))
-        fig.update_layout(**{**PLOT, "margin": dict(l=0, r=0, t=30, b=0)}, height=470, showlegend=False,
+        zlo, zhi = max(0.0, float(Z.min()) - .05), min(1.0, float(Z.max()) + .05)
+        # fixed pixel size: Plotly's WebGL scene initialises at 0 px inside a hidden tab otherwise
+        fig.update_layout(**{**PLOT, "margin": dict(l=0, r=0, t=10, b=0)}, width=780, height=500, showlegend=False,
                           scene=dict(xaxis_title="departure hour", yaxis_title="weather index",
-                                     zaxis=dict(title="P(delay)", range=[0, 1], tickformat=".0%"),
-                                     bgcolor="rgba(0,0,0,0)", camera=dict(eye=dict(x=1.6, y=-1.5, z=.9)),
-                                     xaxis=dict(gridcolor=T["border"]), yaxis=dict(gridcolor=T["border"])))
-        st.plotly_chart(fig, width="stretch")
+                                     zaxis=dict(title="P(delay)", range=[zlo, zhi], tickformat=".0%",
+                                                gridcolor=T["border"], backgroundcolor=T["panel2"], showbackground=True),
+                                     xaxis=dict(gridcolor=T["border"], backgroundcolor=T["panel2"], showbackground=True),
+                                     yaxis=dict(gridcolor=T["border"], backgroundcolor=T["panel2"], showbackground=True),
+                                     aspectmode="manual", aspectratio=dict(x=1.5, y=1.1, z=.75),
+                                     bgcolor="rgba(0,0,0,0)", camera=dict(eye=dict(x=1.55, y=-1.55, z=.85))))
+        st.plotly_chart(fig, width="content")
     with s2:
         hi = np.unravel_index(Z.argmax(), Z.shape); lo = np.unravel_index(Z.argmin(), Z.shape)
         st.markdown(f'<div class="card"><h4>What the surface shows</h4><p>{len(hrs) * len(wxs)} what-if scenarios '
