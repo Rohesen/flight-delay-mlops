@@ -23,9 +23,8 @@ from .feature_store import FeatureStore
 from .train import setup_mlflow
 
 
-@lru_cache(maxsize=4)
-def _load(version: str):
-    setup_mlflow()
+@lru_cache(maxsize=8)
+def _load_cached(uri: str, version: str):
     return mlflow.sklearn.load_model(f"models:/{REGISTERED_MODEL}/{version}")
 
 
@@ -46,7 +45,7 @@ def predict(carrier: str, origin: str, dest: str, departure: pd.Timestamp,
     t0 = time.perf_counter()
     store = store or FeatureStore()
     info = champion_info()
-    model = _load(info["version"])
+    model = _load_cached(setup_mlflow(), str(info["version"]))
     feats = store.get_online_features(origin, dest, carrier)
     row = {
         "carrier": carrier, "origin": origin, "dest": dest,

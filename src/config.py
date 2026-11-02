@@ -10,6 +10,23 @@ FEATURE_DIR = DATA_DIR / "feature_store"
 OFFLINE_DIR = FEATURE_DIR / "offline"
 ONLINE_DB = FEATURE_DIR / "online_store.db"
 MLFLOW_DB = ROOT / "mlflow.db"
+MLFLOW_DB_POINTER = ROOT / ".mlflow_db"   # names the active tracking DB (switched on rebuild)
+
+
+def mlflow_db_path():
+    """Active MLflow SQLite file. A rebuild switches to a fresh file instead of
+    deleting the one an open SQLAlchemy engine is still using."""
+    try:
+        return ROOT / MLFLOW_DB_POINTER.read_text().strip()
+    except OSError:
+        return MLFLOW_DB
+
+
+def new_mlflow_db():
+    import time
+    name = f"mlflow-{int(time.time())}.db"
+    MLFLOW_DB_POINTER.write_text(name)
+    return ROOT / name
 MLFLOW_ARTIFACTS = ROOT / "mlartifacts"
 
 EXPERIMENT_NAME = "flight-delay-prediction"

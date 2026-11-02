@@ -15,42 +15,82 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src import versioning
-from src.config import (BASE_CATEGORICAL, BASE_NUMERIC, CHAMPION_ALIAS, MLFLOW_DB,
+from src.config import (BASE_CATEGORICAL, BASE_NUMERIC, CHAMPION_ALIAS, mlflow_db_path, new_mlflow_db,
                         REGISTERED_MODEL, STORE_FEATURES, TARGET, TEAM)
 from src.data_generation import AIRPORTS, CARRIERS, NEW_CARRIER
 from src.feature_store import FEATURE_VIEWS, FeatureStore
 
 st.set_page_config(page_title="Flight Delay MLOps", page_icon="✈️", layout="wide")
 
-NAVY, TEAL, AMBER, RED, GREEN, GREY = "#14213D", "#0F6E8C", "#E09F3E", "#C0392B", "#2A9D8F", "#8D99AE"
-PLOT = dict(template="plotly_white", font=dict(family="Inter, sans-serif", color=NAVY),
-            margin=dict(l=10, r=10, t=40, b=10))
+# ---- Neon palette ---------------------------------------------------------
+NAVY, TEAL, AMBER, RED, GREEN, GREY = "#E6F1FF", "#00F0FF", "#FFC300", "#FF3B6B", "#39FF88", "#B26BFF"
+MAGENTA, BG, PANEL, BORDER, MUTED = "#FF2BD6", "#070B14", "#0E1424", "#1E2A44", "#8892B0"
+PLOT = dict(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(14,20,36,.55)",
+            font=dict(family="Space Grotesk, Inter, sans-serif", color=NAVY),
+            margin=dict(l=10, r=10, t=44, b=10))
 
 st.markdown("""
 <style>
-.block-container {padding-top: 1.6rem; max-width: 1350px;}
-.hero {background: linear-gradient(120deg,#14213D 0%,#0F6E8C 100%); color:#fff; padding:26px 30px;
-       border-radius:16px; margin-bottom:18px;}
-.hero h1 {color:#fff; font-size:2.0rem; margin:0 0 6px 0;}
-.hero p {color:#d9e6ef; margin:0; font-size:1.02rem;}
-.pill {display:inline-block; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25);
-       padding:3px 11px; border-radius:20px; font-size:.8rem; margin:10px 6px 0 0;}
-.card {background:#fff; border:1px solid #E1E7EE; border-radius:14px; padding:16px 18px; height:100%;
-       box-shadow:0 1px 2px rgba(20,33,61,.04);}
-.card h4 {margin:0 0 6px 0; color:#0F6E8C; font-size:1rem;}
-.card p {margin:0; color:#425066; font-size:.9rem;}
-.kpi {background:#fff; border:1px solid #E1E7EE; border-radius:14px; padding:14px 16px;}
-.kpi .v {font-size:1.7rem; font-weight:700; color:#14213D; line-height:1.1;}
-.kpi .l {font-size:.78rem; color:#6B7A90; text-transform:uppercase; letter-spacing:.04em;}
-.owner {font-size:.8rem; color:#0F6E8C; font-weight:600; text-transform:uppercase; letter-spacing:.05em;}
-.lesson {background:#FFF7E8; border-left:4px solid #E09F3E; padding:12px 16px; border-radius:8px;
-         color:#5B4420; font-size:.93rem; margin:8px 0;}
-.good {background:#E8F6F3; border-left:4px solid #2A9D8F; padding:12px 16px; border-radius:8px;
-       color:#1D5A52; font-size:.93rem; margin:8px 0;}
-.bad {background:#FDECEA; border-left:4px solid #C0392B; padding:12px 16px; border-radius:8px;
-      color:#7A2219; font-size:.93rem; margin:8px 0;}
-.mono {font-family: ui-monospace, Menlo, monospace; font-size:.85rem;}
-div[data-testid="stTabs"] button p {font-size:1rem; font-weight:600;}
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Space+Grotesk:wght@400;500;700&display=swap');
+html, body, [class*="css"], .stMarkdown, p, label, li {font-family:'Space Grotesk', sans-serif;}
+.stApp {background: radial-gradient(1200px 600px at 10% -10%, rgba(255,43,214,.10), transparent 60%),
+                    radial-gradient(1000px 500px at 100% 0%, rgba(0,240,255,.10), transparent 55%), #070B14;}
+.block-container {padding-top: 1.6rem; max-width: 1380px;}
+h1, h2, h3 {font-family:'Orbitron', sans-serif !important; letter-spacing:.02em;}
+h2 {color:#E6F1FF; text-shadow:0 0 18px rgba(0,240,255,.35);}
+h3 {color:#00F0FF !important; text-shadow:0 0 12px rgba(0,240,255,.35);}
+section[data-testid="stSidebar"] {background: linear-gradient(180deg,#0B1020 0%,#0E1424 100%);
+       border-right:1px solid #1E2A44;}
+.hero {position:relative; overflow:hidden; padding:28px 32px; border-radius:20px; margin-bottom:20px;
+       background: linear-gradient(115deg, rgba(255,43,214,.22), rgba(157,78,221,.18) 45%, rgba(0,240,255,.22));
+       border:1px solid rgba(0,240,255,.45);
+       box-shadow: 0 0 28px rgba(0,240,255,.25), inset 0 0 40px rgba(255,43,214,.12);}
+.hero:before {content:""; position:absolute; inset:-2px; background:linear-gradient(90deg,#FF2BD6,#00F0FF,#39FF88,#FF2BD6);
+       background-size:300% 100%; animation:flow 8s linear infinite; height:3px; top:0;}
+@keyframes flow {0%{background-position:0% 0} 100%{background-position:300% 0}}
+.hero h1 {font-family:'Orbitron', sans-serif; font-size:2.05rem; margin:0 0 8px 0; color:#fff;
+          text-shadow:0 0 10px #00F0FF, 0 0 26px rgba(255,43,214,.6);}
+.hero p {color:#C9D6F2; margin:0; font-size:1.04rem;}
+.pill {display:inline-block; background:rgba(7,11,20,.55); border:1px solid #00F0FF; color:#00F0FF;
+       padding:3px 12px; border-radius:20px; font-size:.8rem; margin:12px 6px 0 0;
+       box-shadow:0 0 10px rgba(0,240,255,.35);}
+.pill.m {border-color:#FF2BD6; color:#FF2BD6; box-shadow:0 0 10px rgba(255,43,214,.35);}
+.pill.g {border-color:#39FF88; color:#39FF88; box-shadow:0 0 10px rgba(57,255,136,.35);}
+.pill.y {border-color:#FFC300; color:#FFC300; box-shadow:0 0 10px rgba(255,195,0,.35);}
+.card {background:rgba(14,20,36,.85); border:1px solid #1E2A44; border-radius:16px; padding:16px 18px; height:100%;
+       transition: all .25s ease; backdrop-filter: blur(6px);}
+.card:hover {border-color:#FF2BD6; box-shadow:0 0 22px rgba(255,43,214,.35); transform:translateY(-2px);}
+.card h4 {margin:0 0 6px 0; color:#00F0FF; font-size:1rem; text-shadow:0 0 8px rgba(0,240,255,.45);}
+.card p {margin:0; color:#AEB9D6; font-size:.9rem;}
+.kpi {background:rgba(14,20,36,.9); border:1px solid #1E2A44; border-radius:16px; padding:14px 16px;
+      border-top:2px solid #00F0FF; box-shadow:0 0 16px rgba(0,240,255,.15);}
+.kpi:nth-child(odd) {border-top-color:#FF2BD6;}
+.kpi .v {font-family:'Orbitron', sans-serif; font-size:1.55rem; font-weight:800; color:#fff; line-height:1.15;
+         text-shadow:0 0 12px rgba(0,240,255,.55);}
+.kpi .l {font-size:.74rem; color:#8892B0; text-transform:uppercase; letter-spacing:.08em; margin-top:4px;}
+.owner {display:inline-block; font-size:.78rem; color:#39FF88; font-weight:700; text-transform:uppercase;
+        letter-spacing:.08em; border:1px solid #39FF88; padding:3px 12px; border-radius:20px;
+        box-shadow:0 0 12px rgba(57,255,136,.35); margin-bottom:6px;}
+.lesson {background:rgba(255,195,0,.07); border:1px solid rgba(255,195,0,.35); border-left:4px solid #FFC300;
+         padding:12px 16px; border-radius:10px; color:#FFE7A3; font-size:.93rem; margin:8px 0;}
+.good {background:rgba(57,255,136,.07); border:1px solid rgba(57,255,136,.35); border-left:4px solid #39FF88;
+       padding:12px 16px; border-radius:10px; color:#C6FFDD; font-size:.93rem; margin:8px 0;}
+.bad {background:rgba(255,59,107,.08); border:1px solid rgba(255,59,107,.4); border-left:4px solid #FF3B6B;
+      padding:12px 16px; border-radius:10px; color:#FFC2D1; font-size:.93rem; margin:8px 0;}
+.mono {font-family: ui-monospace, Menlo, monospace; font-size:.85rem; color:#00F0FF;}
+div[data-testid="stTabs"] button p {font-family:'Orbitron', sans-serif; font-size:.9rem; font-weight:600;}
+div[data-testid="stTabs"] button[aria-selected="true"] p {color:#00F0FF; text-shadow:0 0 10px rgba(0,240,255,.7);}
+div[data-baseweb="tab-highlight"] {background:linear-gradient(90deg,#FF2BD6,#00F0FF) !important; height:3px;
+       box-shadow:0 0 12px #00F0FF;}
+.stButton > button, .stDownloadButton > button {border-radius:12px; border:1px solid #00F0FF; color:#00F0FF;
+       background:rgba(0,240,255,.06); transition:all .2s ease; font-weight:600;}
+.stButton > button:hover, .stDownloadButton > button:hover {box-shadow:0 0 18px rgba(0,240,255,.55); color:#fff;
+       border-color:#00F0FF;}
+.stButton > button[kind="primary"] {background:linear-gradient(90deg,#FF2BD6,#9D4EDD 50%,#00F0FF); color:#fff;
+       border:none; box-shadow:0 0 18px rgba(255,43,214,.45);}
+.stButton > button[kind="primary"]:hover {box-shadow:0 0 28px rgba(0,240,255,.7);}
+div[data-testid="stDataFrame"] {border:1px solid #1E2A44; border-radius:12px;}
+div[data-testid="stExpander"] {border:1px solid #1E2A44; border-radius:12px; background:rgba(14,20,36,.6);}
 </style>""", unsafe_allow_html=True)
 
 
@@ -61,7 +101,7 @@ def bootstrap() -> bool:
     from src.pipeline import run_all
     from src.train import registry_versions
     try:
-        ready = MLFLOW_DB.exists() and versioning.list_versions() and not registry_versions().empty \
+        ready = mlflow_db_path().exists() and versioning.list_versions() and not registry_versions().empty \
             and FeatureStore().offline_metadata()
     except Exception:
         ready = False
@@ -103,7 +143,7 @@ with st.sidebar:
     st.caption("DSE ZG529 · Data Management for ML\nExperiential Learning Assignment")
     st.markdown("**Team**")
     for m in TEAM:
-        st.markdown(f"**{m['member']}** — {m['name']}  \n<span style='color:#6B7A90;font-size:.85rem'>{m['part']}</span>",
+        st.markdown(f"**{m['member']}** — {m['name']}  \n<span style='color:#8892B0;font-size:.85rem'>{m['part']}</span>",
                     unsafe_allow_html=True)
     st.divider()
     try:
@@ -121,7 +161,7 @@ with st.sidebar:
         from src.config import DATA_DIR, MLFLOW_ARTIFACTS
         for p in [DATA_DIR / ".versions", DATA_DIR / "versions", DATA_DIR / "feature_store", MLFLOW_ARTIFACTS]:
             shutil.rmtree(p, ignore_errors=True)
-        MLFLOW_DB.unlink(missing_ok=True)
+        new_mlflow_db()   # fresh tracking DB; never delete a DB an engine still has open
         st.cache_resource.clear(); st.cache_data.clear()
         st.rerun()
 
@@ -130,8 +170,8 @@ st.markdown("""
   <h1>✈️ Flight Delay Prediction — an End-to-End MLOps Pipeline</h1>
   <p>Predicting whether an Indian domestic flight departs &gt;15 min late, with every stage of the
   data &amp; model lifecycle made reproducible, traceable and servable.</p>
-  <span class="pill">DVC-style data versioning</span><span class="pill">Feature store · point-in-time joins</span>
-  <span class="pill">MLflow tracking &amp; registry</span><span class="pill">Prediction service · lineage</span>
+  <span class="pill">DVC-style data versioning</span><span class="pill m">Feature store · point-in-time joins</span>
+  <span class="pill g">MLflow tracking &amp; registry</span><span class="pill y">Prediction service · lineage</span>
 </div>""", unsafe_allow_html=True)
 
 tabs = st.tabs(["🏠 Overview", "① Data Versioning", "② Feature Store",
@@ -151,18 +191,18 @@ with tabs[0]:
     with left:
         st.subheader("Architecture")
         st.graphviz_chart("""
-        digraph G { rankdir=LR; bgcolor="transparent"; node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=11 color="#C9D4DF" fillcolor="#FFFFFF"];
-          edge [color="#8D99AE"];
-          src [label="Source systems\\n(flight ops extracts)" fillcolor="#EAF0F5"];
-          subgraph cluster1 {label="① Data Versioning" style="rounded,dashed" color="#0F6E8C" fontcolor="#0F6E8C" fontname="Helvetica-Bold";
+        digraph G { rankdir=LR; bgcolor="transparent"; node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=11 color="#2E3B5E" fillcolor="#0E1424" fontcolor="#E6F1FF"];
+          edge [color="#5A6B95" fontcolor="#AEB9D6"];
+          src [label="Source systems\\n(flight ops extracts)" fillcolor="#1A1030" color="#FF2BD6"];
+          subgraph cluster1 {label="① Data Versioning" style="rounded,dashed" color="#00F0FF" fontcolor="#00F0FF" fontname="Helvetica-Bold";
             dvc [label="Content-addressed cache\\nMD5 → bytes"]; meta [label=".dvc pointers in Git\\nv1.0 → v1.1 → v2.0 → v3.0"]; }
-          subgraph cluster2 {label="② Feature Store" style="rounded,dashed" color="#2A9D8F" fontcolor="#2A9D8F" fontname="Helvetica-Bold";
+          subgraph cluster2 {label="② Feature Store" style="rounded,dashed" color="#39FF88" fontcolor="#39FF88" fontname="Helvetica-Bold";
             off [label="Offline store (Parquet)\\nfull feature history"]; on [label="Online store (SQLite)\\nlatest value per entity"]; }
-          subgraph cluster3 {label="③ MLflow" style="rounded,dashed" color="#E09F3E" fontcolor="#B07A1E" fontname="Helvetica-Bold";
+          subgraph cluster3 {label="③ MLflow" style="rounded,dashed" color="#FFC300" fontcolor="#FFC300" fontname="Helvetica-Bold";
             exp [label="Experiment tracking\\nparams · metrics · artifacts"]; reg [label="Model registry\\n@champion alias"]; }
-          subgraph cluster4 {label="④ Serving" style="rounded,dashed" color="#C0392B" fontcolor="#C0392B" fontname="Helvetica-Bold";
+          subgraph cluster4 {label="④ Serving" style="rounded,dashed" color="#FF2BD6" fontcolor="#FF2BD6" fontname="Helvetica-Bold";
             api [label="Prediction service\\nFastAPI / Streamlit"]; }
-          user [label="Client / ops dashboard" fillcolor="#EAF0F5"];
+          user [label="Client / ops dashboard" fillcolor="#1A1030" color="#FF2BD6"];
           src -> dvc -> meta; dvc -> off [label=" point-in-time\\n training set" fontsize=9];
           off -> on [label=" materialize" fontsize=9]; off -> exp -> reg; reg -> api; on -> api; api -> user;
         }""", width="stretch")
@@ -211,9 +251,9 @@ with tabs[1]:
         st.dataframe(vdf, hide_index=True, width="stretch")
     with r:
         st.subheader("Lineage")
-        st.graphviz_chart("digraph{rankdir=TB;bgcolor=transparent;node[shape=box style='rounded,filled' fillcolor='#EAF0F5' color='#0F6E8C' fontname=Helvetica fontsize=11];"
+        st.graphviz_chart("digraph{rankdir=TB;bgcolor=transparent;node[shape=box style='rounded,filled' fillcolor='#0E1424' color='#00F0FF' fontcolor='#E6F1FF' fontname=Helvetica fontsize=11];"
                           + "".join(f'"{m["tag"]}"[label="{m["tag"]}\\nmd5 {m["outs"][0]["md5"][:8]}\\n{m["rows"]:,} rows"];' for m in versions)
-                          + "".join(f'"{m["parent"]}"->"{m["tag"]}";' for m in versions if m["parent"]) + "}")
+                          + "edge[color='#FF2BD6'];" + "".join(f'"{m["parent"]}"->"{m["tag"]}";' for m in versions if m["parent"]) + "}")
 
     st.subheader("🔍 Checkout & compare two versions")
     tags = [m["tag"] for m in versions]
@@ -313,7 +353,7 @@ with tabs[2]:
     feat = o3.selectbox("Feature", fv.features)
     hs = hist[hist[fv.entity].isin(chosen)]
     fig = px.line(hs, x="event_timestamp", y=feat, color=fv.entity, title=f"{feat} over time",
-                  color_discrete_sequence=[TEAL, AMBER, RED, GREEN, NAVY, GREY])
+                  color_discrete_sequence=[TEAL, MAGENTA, GREEN, AMBER, GREY, RED])
     fig.update_layout(**PLOT); st.plotly_chart(fig, width="stretch")
 
     st.subheader("⏱️ Point-in-time join vs. naive join")
@@ -461,7 +501,7 @@ with tabs[3]:
         fig.update_layout(**PLOT); cc1.plotly_chart(fig, width="stretch")
         same = show[show["data"] == "v2.0"].dropna(subset=["F1"])
         fig = px.bar(same, x="run", y="ROC-AUC", color="model", title="Like-for-like: runs on v2.0 only",
-                     color_discrete_sequence=[TEAL, AMBER, RED], text_auto=".3f")
+                     color_discrete_sequence=[TEAL, MAGENTA, GREEN], text_auto=".3f")
         fig.update_layout(**PLOT, yaxis_range=[0.5, same["ROC-AUC"].max() + .05], xaxis_title="")
         cc2.plotly_chart(fig, width="stretch")
         st.markdown('<div class="lesson">Metrics are only comparable on the <b>same data version</b> (same '
@@ -523,8 +563,9 @@ with tabs[4]:
             mode="gauge+number", value=p * 100, number={"suffix": "%", "font": {"size": 46}},
             title={"text": f"{car} {org}→{dst} · {dep:%d %b %H:%M}<br><b>{res['prediction']}</b>"},
             gauge={"axis": {"range": [0, 100]}, "bar": {"color": RED if p >= .5 else GREEN},
-                   "steps": [{"range": [0, 35], "color": "#E8F6F3"}, {"range": [35, 50], "color": "#FFF7E8"},
-                             {"range": [50, 100], "color": "#FDECEA"}],
+                   "bgcolor": "rgba(14,20,36,.6)", "bordercolor": "#1E2A44",
+                   "steps": [{"range": [0, 35], "color": "rgba(57,255,136,.12)"}, {"range": [35, 50], "color": "rgba(255,195,0,.12)"},
+                             {"range": [50, 100], "color": "rgba(255,59,107,.14)"}],
                    "threshold": {"line": {"color": NAVY, "width": 3}, "value": 50}}))
         fig.update_layout(**PLOT, height=300); st.plotly_chart(fig, width="stretch")
         hours = list(range(5, 24))
@@ -545,12 +586,12 @@ with tabs[4]:
     with l2:
         st.subheader("Prediction lineage")
         L = res["lineage"]
-        st.graphviz_chart(f"""digraph{{rankdir=TB;bgcolor=transparent;node[shape=box style="rounded,filled" fontname=Helvetica fontsize=10 fillcolor="#FFFFFF" color="#C9D4DF"];
-          d[label="Dataset {L['data_version']}\\nmd5 {L['data_md5'][:12]}" fillcolor="#EAF0F5"];
-          f[label="Feature store\\nvalues as of {list(res['feature_timestamps'].values())[0]}" fillcolor="#E8F6F3"];
-          r[label="MLflow run\\n{L['run_id'][:12]}\\n{L['model_type']}" fillcolor="#FFF7E8"];
-          m[label="{REGISTERED_MODEL}\\nv{L['version']} @{L['alias']}" fillcolor="#FFF7E8"];
-          p[label="Prediction\\nP(delay)={res['delay_probability']:.3f}\\n{res['latency_ms']} ms" fillcolor="#FDECEA"];
+        st.graphviz_chart(f"""digraph{{rankdir=TB;bgcolor=transparent;node[shape=box style="rounded,filled" fontname=Helvetica fontsize=10 fillcolor="#0E1424" color="#2E3B5E" fontcolor="#E6F1FF"]; edge[color="#5A6B95" fontcolor="#AEB9D6"];
+          d[label="Dataset {L['data_version']}\\nmd5 {L['data_md5'][:12]}" color="#00F0FF"];
+          f[label="Feature store\\nvalues as of {list(res['feature_timestamps'].values())[0]}" color="#39FF88"];
+          r[label="MLflow run\\n{L['run_id'][:12]}\\n{L['model_type']}" color="#FFC300"];
+          m[label="{REGISTERED_MODEL}\\nv{L['version']} @{L['alias']}" color="#FFC300"];
+          p[label="Prediction\\nP(delay)={res['delay_probability']:.3f}\\n{res['latency_ms']} ms" color="#FF2BD6" penwidth=2];
           d->r; d->f; f->r[style=dashed label=" training set" fontsize=9]; r->m; m->p; f->p[label=" online lookup" fontsize=9]; }}""",
                           width="stretch")
         st.code("""# REST API (FastAPI) — run: uvicorn serving.api:app --port 8000
@@ -585,5 +626,5 @@ curl -X POST localhost:8000/predict -H "Content-Type: application/json" \\
                      column_config={"delay_probability": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.2f")})
         st.download_button("Download predictions (CSV)", bt.to_csv(index=False), "predictions.csv", "text/csv")
 
-st.markdown("<br><center style='color:#8D99AE;font-size:.8rem'>DSE ZG529 · Data Management for Machine Learning · "
+st.markdown("<br><center style='color:#8892B0;font-size:.8rem;letter-spacing:.05em'>DSE ZG529 · Data Management for Machine Learning · "
             "BITS Pilani WILP · Experiential Learning Assignment</center>", unsafe_allow_html=True)

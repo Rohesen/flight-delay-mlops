@@ -30,7 +30,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from . import versioning
 from .config import (BASE_CATEGORICAL, BASE_NUMERIC, CHAMPION_ALIAS, EXPERIMENT_NAME,
-                     MLFLOW_ARTIFACTS, MLFLOW_DB, REGISTERED_MODEL, SEED, STORE_FEATURES, TARGET)
+                     MLFLOW_ARTIFACTS, REGISTERED_MODEL, mlflow_db_path, SEED, STORE_FEATURES, TARGET)
 from .feature_store import FeatureStore, compute_feature_tables
 
 warnings.filterwarnings("ignore")
@@ -47,7 +47,7 @@ MODEL_TYPES = {
 
 
 def setup_mlflow() -> str:
-    mlflow.set_tracking_uri(f"sqlite:///{MLFLOW_DB}")
+    mlflow.set_tracking_uri(f"sqlite:///{mlflow_db_path()}")
     if mlflow.get_experiment_by_name(EXPERIMENT_NAME) is None:
         MLFLOW_ARTIFACTS.mkdir(parents=True, exist_ok=True)
         mlflow.create_experiment(EXPERIMENT_NAME, artifact_location=MLFLOW_ARTIFACTS.as_uri())

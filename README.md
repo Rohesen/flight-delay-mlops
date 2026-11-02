@@ -1,91 +1,140 @@
-# ✈️ Flight Delay Prediction — End-to-End MLOps Pipeline
+<div align="center">
 
-**DSE ZG529 · Data Management for Machine Learning · BITS Pilani WILP — Experiential Learning Assignment**
+<img src="https://capsule-render.vercel.app/api?type=waving&height=210&color=0:FF2BD6,50:9D4EDD,100:00F0FF&text=Flight%20Delay%20MLOps&fontColor=ffffff&fontSize=48&fontAlignY=36&desc=End-to-end%20ML%20pipeline%20%E2%80%A2%20versioned%20%E2%80%A2%20traceable%20%E2%80%A2%20servable&descAlignY=58&descSize=16&animation=fadeIn" width="100%"/>
 
-An end-to-end machine-learning pipeline that predicts whether an Indian domestic flight will depart more than
-15 minutes late, built to demonstrate the data-management practices that make ML reproducible, traceable and
-servable:
+<a href="https://flight-delay-mlops.streamlit.app">
+<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=20&duration=2600&pause=800&color=00F0FF&center=true&vCenter=true&width=720&lines=%E2%91%A0+Data+Versioning+with+DVC;%E2%91%A1+Feature+Store+%E2%80%A2+Point-in-time+Joins;%E2%91%A2+MLflow+Tracking+%26+Model+Registry;%E2%91%A3+Prediction+Service+with+Full+Lineage" alt="Typing SVG"/>
+</a>
 
-| # | Stage | What it demonstrates | Syllabus |
-|---|-------|----------------------|----------|
-| ① | **Data versioning (DVC)** | Content-addressed dataset versions, lineage, diffs, reproducibility | CS 6, CS 9 · Lab Exp 4 |
-| ② | **Feature store** | Offline/online stores, point-in-time joins, leakage prevention, no training/serving skew | CS 8, CS 11 · Lab Exp 4 |
-| ③ | **Experiment tracking & registry (MLflow)** | Params, metrics, artifacts, dataset lineage, registered versions, `@champion` alias | CS 12 · Lab Exp 3 |
-| ④ | **Prediction service** | Registry-resolved model + online features, REST API, per-prediction lineage | CS 5, CS 16 · Lab Exp 4 |
+<br/>
 
-## Architecture
+<a href="https://flight-delay-mlops.streamlit.app"><img src="https://img.shields.io/badge/%E2%96%B6%20LIVE%20DEMO-flight--delay--mlops.streamlit.app-FF2BD6?style=for-the-badge&labelColor=0B0F1A"/></a>
 
+<img src="https://img.shields.io/badge/Python-3.13-00F0FF?style=for-the-badge&logo=python&logoColor=00F0FF&labelColor=0B0F1A"/>
+<img src="https://img.shields.io/badge/DVC-versioning-39FF88?style=for-the-badge&logo=dvc&logoColor=39FF88&labelColor=0B0F1A"/>
+<img src="https://img.shields.io/badge/MLflow-registry-FFC300?style=for-the-badge&logo=mlflow&logoColor=FFC300&labelColor=0B0F1A"/>
+<img src="https://img.shields.io/badge/Streamlit-UI-FF3B6B?style=for-the-badge&logo=streamlit&logoColor=FF3B6B&labelColor=0B0F1A"/>
+<img src="https://img.shields.io/badge/FastAPI-serving-B26BFF?style=for-the-badge&logo=fastapi&logoColor=B26BFF&labelColor=0B0F1A"/>
+
+**DSE ZG529 · Data Management for Machine Learning · BITS Pilani WILP**
+<br/>*Experiential Learning Assignment*
+
+</div>
+
+---
+
+## 🛰️ What this is
+
+An end-to-end pipeline that predicts whether an **Indian domestic flight will depart more than 15 minutes late**, built to show the data-management practices that turn a model into a reliable system. Each data version, feature, experiment and prediction can be **reproduced, traced and audited**.
+
+## ⚡ The four stages
+
+| | Stage | What it proves | Syllabus |
+|:-:|---|---|---|
+| 🟦 **①** | **Data versioning (DVC)** | Content-addressed datasets, lineage, diffs, bit-exact reproducibility | CS 6 · CS 9 · Lab Exp 4 |
+| 🟪 **②** | **Feature store** | Offline + online stores, point-in-time joins, leakage prevention, zero training/serving skew | CS 8 · CS 11 · Lab Exp 4 |
+| 🟨 **③** | **MLflow tracking & registry** | Params, metrics, artifacts, dataset lineage, versioned models, `@champion` alias | CS 12 · Lab Exp 3 |
+| 🟩 **④** | **Prediction service** | Registry-resolved model + online features, REST API, per-prediction lineage | CS 5 · CS 16 · Lab Exp 4 |
+
+## 🧬 Architecture
+
+```mermaid
+flowchart LR
+    SRC([✈️ Flight-ops extracts]):::src --> V1
+
+    subgraph S1["① DATA VERSIONING"]
+      V1[v1.0 raw] --> V2[v1.1 cleaned] --> V3[v2.0 schema change] --> V4[v3.0 drift]
+    end
+
+    subgraph S2["② FEATURE STORE"]
+      OFF[(Offline · Parquet<br/>full history)] -->|materialize| ON[(Online · SQLite<br/>latest values)]
+    end
+
+    subgraph S3["③ MLFLOW"]
+      EXP[Experiments<br/>params · metrics · artifacts] --> REG{{Registry<br/>@champion}}
+    end
+
+    subgraph S4["④ SERVING"]
+      API[[Prediction service<br/>FastAPI · Streamlit]]
+    end
+
+    V3 -->|point-in-time<br/>training set| OFF
+    OFF --> EXP
+    REG --> API
+    ON --> API
+    API --> USER([📊 Ops dashboard]):::src
+
+    classDef src fill:#1A1030,stroke:#FF2BD6,stroke-width:2px,color:#FFFFFF
+    classDef default fill:#0E1424,stroke:#00F0FF,stroke-width:1.5px,color:#E6F1FF
+    style S1 fill:#070B14,stroke:#00F0FF,stroke-width:2px,color:#00F0FF
+    style S2 fill:#070B14,stroke:#39FF88,stroke-width:2px,color:#39FF88
+    style S3 fill:#070B14,stroke:#FFC300,stroke-width:2px,color:#FFC300
+    style S4 fill:#070B14,stroke:#FF2BD6,stroke-width:2px,color:#FF2BD6
 ```
- Source extracts ──► ① Versioned datasets (MD5 cache + .dvc pointers in Git)
-                          │ v1.0 ─► v1.1 ─► v2.0 ─► v3.0
-                          ▼
-                     ② Feature store ── offline (Parquet, full history) ──► point-in-time training set
-                          │                                                    │
-                          └── materialize ──► online (SQLite, latest values)    ▼
-                                                    │                ③ MLflow tracking ─► Model registry (@champion)
-                                                    ▼                                          │
-                                              ④ Prediction service (FastAPI / Streamlit) ◄─────┘
-```
 
-## Dataset
+## 🗂️ Dataset versions
 
-Synthetic but realistic Indian domestic flight operations for 2025 (8 airports, 6 carriers, ~35k flights),
-generated deterministically from a seed so every version is reproducible. Delay mechanics include carrier and
-hub-congestion effects, evening knock-on delays, weather, winter fog at north-Indian airports, and persistent
-airport-level disruption — which is what makes recent airport delay history (a feature-store feature) predictive.
+Synthetic but realistic Indian domestic flight operations for 2025: **8 airports, 6 carriers, ~35k flights**. The data is generated deterministically from a seed, so every version is reproducible. Delays are driven by carrier and hub-congestion effects, evening knock-on delays, weather, winter fog at north-Indian airports, and persistent airport-level disruption.
 
 | Version | Content | Data-management event |
-|---------|---------|-----------------------|
-| v1.0 | Jan–Jun 2025 raw extract | 3% duplicate rows, 4% missing weather readings |
-| v1.1 | v1.0 cleaned | De-duplicated, weather imputed by airport median |
-| v2.0 | Jan–Sep 2025 | New carrier QP + new column `aircraft_type` (schema change) |
-| v3.0 | Full year 2025 | Winter fog season (distribution drift) |
+|:-:|---|---|
+| `v1.0` | Jan–Jun 2025 raw extract | 🔴 3% duplicate rows, 4% missing weather readings |
+| `v1.1` | v1.0 cleaned | 🟢 De-duplicated, weather imputed by airport median |
+| `v2.0` | Jan–Sep 2025 | 🟡 New carrier **QP** + new column `aircraft_type` (schema change) |
+| `v3.0` | Full year 2025 | 🟣 Winter fog season (distribution drift) |
 
-## Key results
+## 📈 Key results
 
-| Experiment | ROC-AUC |
-|------------|---------|
-| Base features only (v2.0, gradient boosting) | ~0.61 |
-| + feature-store features, point-in-time correct | ~0.66–0.67 |
-| Naive same-day join — offline test | ~0.78 (**inflated by leakage**) |
-| Naive same-day join — in production | ~0.63 (worse than the honest model) |
+| Experiment | ROC-AUC | |
+|---|:-:|---|
+| Base features only (v2.0) | **~0.61** | baseline |
+| + feature-store features, point-in-time correct | **~0.67** | ✅ honest |
+| Naive same-day join, offline test | **~0.78** | ⚠️ inflated by leakage |
+| Naive same-day join, in production | **~0.63** | ❌ worse than the honest model |
 
-## Run it
+> [!IMPORTANT]
+> The leaky model *looks* best offline but is worst in production. Point-in-time joins in the feature store are what make offline metrics trustworthy.
+
+## 🚀 Run it
 
 ```bash
 pip install -r requirements-dev.txt
-python -m src.pipeline          # or: dvc repro
-streamlit run app.py            # interactive demo
-uvicorn serving.api:app --port 8000   # REST API → http://localhost:8000/docs
-mlflow ui --backend-store-uri sqlite:///mlflow.db   # MLflow UI
+python -m src.pipeline                  # or: dvc repro
+streamlit run app.py                    # interactive neon UI
+uvicorn serving.api:app --port 8000     # REST API → http://localhost:8000/docs
+mlflow ui --backend-store-uri sqlite:///mlflow.db
 pytest -q
 ```
 
-On first launch the Streamlit app builds everything automatically (~40 s).
+On first launch, the Streamlit app builds everything automatically in about 40 seconds.
 
-## Repository layout
+## 🧩 Repository layout
 
 ```
-app.py                 Streamlit app (one tab per pipeline stage)
-src/data_generation.py Synthetic data + version definitions
-src/versioning.py      DVC-style content-addressed versioning, checkout, diff
-src/feature_store.py   Feature views, offline/online stores, point-in-time join, materialize
-src/train.py           Training, MLflow tracking, leakage experiment, model registry
-src/predict.py         Prediction service core with lineage
-src/pipeline.py        Stage runner used by dvc.yaml
-serving/api.py         FastAPI REST service
-dvc.yaml / params.yaml DVC pipeline definition and parameters
-tests/                 Reproducibility and point-in-time correctness tests
-docs/VIDEO_SCRIPT.md   1-minute script for each team member
+app.py                  Streamlit app — one neon tab per pipeline stage
+src/data_generation.py  Synthetic data + version definitions
+src/versioning.py       DVC-style content-addressed versioning, checkout, diff
+src/feature_store.py    Feature views, offline/online stores, point-in-time join, materialize
+src/train.py            Training, MLflow tracking, leakage experiment, model registry
+src/predict.py          Prediction service core with lineage
+src/pipeline.py         Stage runner used by dvc.yaml
+serving/api.py          FastAPI REST service
+dvc.yaml · params.yaml  DVC pipeline definition and parameters
+tests/                  Reproducibility and point-in-time correctness tests
+docs/VIDEO_SCRIPT.md    1-minute script for each team member
 ```
 
-## Team
+## 👥 Team
 
-Edit names in `src/config.py` → `TEAM`.
+| | Member | BITS ID | Owns |
+|:-:|---|---|---|
+| 🟦 | **Rohesen Raj** | 2025NS04108 | ① Data Versioning (DVC) |
+| 🟪 | **Akriti Adarsh** | 2025NS04070 | ② Feature Engineering & Feature Store |
+| 🟨 | **Chelsa Sam** | 2025NS04086 | ③ Experiment Tracking & Model Registry |
+| 🟩 | **Amogh J Putanikar** | 2025NS04023 | ④ Prediction Service & Lineage |
 
-| Member | Part |
-|--------|------|
-| Member 1 — Rohesen Raj (2025NS04108) | Data Versioning |
-| Member 2 — Akriti Adarsh (2025NS04070) | Feature Engineering & Feature Store |
-| Member 3 — Chelsa Sam (2025NS04086) | Experiment Tracking & Model Registry |
-| Member 4 — Amogh J Putanikar (2025NS04023) | Prediction Service & Lineage |
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&height=110&section=footer&color=0:00F0FF,50:9D4EDD,100:FF2BD6" width="100%"/>
+
+</div>
