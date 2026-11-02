@@ -99,6 +99,21 @@ Synthetic but realistic Indian domestic flight operations for 2025: **8 airports
 > [!IMPORTANT]
 > The leaky model *looks* best offline but is worst in production. Point-in-time joins in the feature store are what make offline metrics trustworthy.
 
+## 🔐 Security & robustness
+
+| Area | Protection |
+|---|---|
+| Destructive actions | *Rebuild pipeline* is hidden unless an `ADMIN_PASSWORD` secret is set; checked with constant-time comparison |
+| Abuse / DoS | Per-session cooldowns on every write action and a global cap on stored MLflow runs (`MAX_MLFLOW_RUNS`, default 80) |
+| Injection | Data-version tags, feature-view (SQL table) names and the MLflow DB pointer are whitelisted; entity values use parameterised SQL |
+| XSS | Free-text run names are sanitised (safe characters only, 60-char limit); no user text is rendered as HTML |
+| REST API | Strict Pydantic schema (enumerated airports/carriers, typed `datetime`, bounded weather, unknown fields rejected), generic 503 errors with no stack traces, security headers, trusted-host check |
+| Deserialisation | Models are only loaded from this app's own MLflow registry, never from user-supplied paths |
+| Supply chain | Dependency versions bounded in `requirements.txt` |
+| Privacy | MLflow telemetry and Streamlit usage stats disabled; error details limited to the exception type |
+
+To enable admin actions on Streamlit Cloud: **Manage app → Settings → Secrets** and add `ADMIN_PASSWORD = "your-password"`.
+
 ## 🚀 Run it
 
 ```bash
@@ -122,9 +137,10 @@ src/feature_store.py    Feature views, offline/online stores, point-in-time join
 src/train.py            Training, MLflow tracking, leakage experiment, model registry
 src/predict.py          Prediction service core with lineage
 src/pipeline.py         Stage runner used by dvc.yaml
+src/security.py         Input validation, sanitising, rate limits, admin check
 serving/api.py          FastAPI REST service
 dvc.yaml · params.yaml  DVC pipeline definition and parameters
-tests/                  Reproducibility and point-in-time correctness tests
+tests/                  Reproducibility, point-in-time, security and API tests
 docs/VIDEO_SCRIPT.md    1-minute script for each team member
 ```
 

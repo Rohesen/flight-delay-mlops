@@ -17,12 +17,14 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import re
 from datetime import datetime, timezone
 
 import pandas as pd
 import yaml
 
 from .config import VERSION_META, VERSION_STORE
+from .security import valid_tag
 
 
 def _to_bytes(df: pd.DataFrame) -> bytes:
@@ -36,11 +38,14 @@ def md5_of(df: pd.DataFrame) -> str:
 
 
 def _cache_path(md5: str):
+    if not re.fullmatch(r"[0-9a-f]{32}", md5):
+        raise ValueError("Invalid md5")
     return VERSION_STORE / md5[:2] / md5[2:]
 
 
 def commit_version(df: pd.DataFrame, tag: str, message: str, parent: str | None = None) -> dict:
     """Store dataset content once (by hash) and write a .dvc-style pointer file."""
+    valid_tag(tag)
     data = _to_bytes(df)
     md5 = hashlib.md5(data).hexdigest()
     path = _cache_path(md5)
@@ -70,7 +75,7 @@ def list_versions() -> list[dict]:
 
 
 def get_meta(tag: str) -> dict:
-    return yaml.safe_load((VERSION_META / f"{tag}.dvc").read_text())
+    return yaml.safe_load((VERSION_META / f"{valid_tag(tag)}.dvc").read_text())
 
 
 def checkout(tag: str) -> pd.DataFrame:

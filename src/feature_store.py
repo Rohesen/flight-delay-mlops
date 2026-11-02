@@ -121,6 +121,8 @@ class FeatureStore:
             {"data_version": data_version, "rows": {n: len(t) for n, t in tables.items()}}))
 
     def read_offline(self, name: str) -> pd.DataFrame:
+        if name not in self.views:
+            raise ValueError(f"Unknown feature view: {name!r}")
         return pd.read_parquet(self.offline_dir / f"{name}.parquet")
 
     def offline_metadata(self) -> dict:
@@ -187,6 +189,8 @@ class FeatureStore:
         return result
 
     def online_table(self, name: str) -> pd.DataFrame:
+        if name not in self.views:        # table names can't be parameterised -> whitelist
+            raise ValueError(f"Unknown feature view: {name!r}")
         con = sqlite3.connect(self.online_db)
         df = pd.read_sql(f"SELECT * FROM {name}", con)
         con.close()

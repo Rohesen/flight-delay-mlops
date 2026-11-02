@@ -13,6 +13,8 @@ import warnings
 
 import os
 os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")
+os.environ.setdefault("MLFLOW_DISABLE_TELEMETRY", "true")
+os.environ.setdefault("DO_NOT_TRACK", "true")
 import mlflow
 import mlflow.sklearn
 import numpy as np
@@ -32,6 +34,7 @@ from . import versioning
 from .config import (BASE_CATEGORICAL, BASE_NUMERIC, CHAMPION_ALIAS, EXPERIMENT_NAME,
                      MLFLOW_ARTIFACTS, REGISTERED_MODEL, mlflow_db_path, SEED, STORE_FEATURES, TARGET)
 from .feature_store import FeatureStore, compute_feature_tables
+from .security import sanitize_text, valid_tag
 
 warnings.filterwarnings("ignore")
 
@@ -110,6 +113,11 @@ def _log_sklearn(pipe, sig, example):
 def train_and_log(tag: str, model_type: str, params: dict | None = None, use_store: bool = True,
                   run_name: str | None = None, author: str = "team") -> dict:
     setup_mlflow()
+    valid_tag(tag)
+    if model_type not in MODEL_TYPES:
+        raise ValueError(f"Unknown model type: {model_type!r}")
+    run_name = sanitize_text(run_name or f"{model_type} | {tag}")
+    author = sanitize_text(author, default="team")
     params = params or {}
     df = build_dataset(tag)
     train, test = time_split(df)

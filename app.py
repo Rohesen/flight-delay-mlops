@@ -15,6 +15,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src import versioning
+from src.security import MAX_RUNS, check_admin, cooldown_ok, sanitize_text
 from src.config import (BASE_CATEGORICAL, BASE_NUMERIC, CHAMPION_ALIAS, mlflow_db_path, new_mlflow_db,
                         REGISTERED_MODEL, STORE_FEATURES, TARGET, TEAM)
 from src.data_generation import AIRPORTS, CARRIERS, NEW_CARRIER
@@ -290,15 +291,33 @@ with st.sidebar:
     except Exception as e:
         st.warning(f"Pipeline not ready: {e}")
     st.divider()
-    if st.button("♻️ Rebuild entire pipeline", width="stretch",
-                 help="Deletes versions, feature store and MLflow DB, then reruns every stage"):
-        import shutil
-        from src.config import DATA_DIR, MLFLOW_ARTIFACTS
-        for p in [DATA_DIR / ".versions", DATA_DIR / "versions", DATA_DIR / "feature_store", MLFLOW_ARTIFACTS]:
-            shutil.rmtree(p, ignore_errors=True)
-        new_mlflow_db()   # fresh tracking DB; never delete a DB an engine still has open
-        st.cache_resource.clear(); st.cache_data.clear()
-        st.rerun()
+    _admin_pw = None
+    try:
+        _admin_pw = st.secrets.get("ADMIN_PASSWORD")
+    except Exception:
+        _admin_pw = os.environ.get("ADMIN_PASSWORD")
+    with st.expander("🔒 Admin"):
+        if not _admin_pw:
+            st.caption("Destructive actions are disabled on the public app. Set an `ADMIN_PASSWORD` secret to enable.")
+        else:
+            entered = st.text_input("Admin password", type="password", max_chars=128, key="admin_pw")
+            if st.button("♻️ Rebuild entire pipeline", width="stretch",
+                         help="Deletes versions, feature store and MLflow DB, then reruns every stage"):
+                if not check_admin(entered, _admin_pw):
+                    st.error("Incorrect admin password.")
+                else:
+                    ok, left = cooldown_ok(st.session_state, "rebuild", 60)
+                    if not ok:
+                        st.warning(f"Please wait {left:.0f}s before rebuilding again.")
+                    else:
+                        import shutil
+                        from src.config import DATA_DIR, MLFLOW_ARTIFACTS
+                        for p in [DATA_DIR / ".versions", DATA_DIR / "versions", DATA_DIR / "feature_store",
+                                  MLFLOW_ARTIFACTS]:
+                            shutil.rmtree(p, ignore_errors=True)
+                        new_mlflow_db()   # fresh tracking DB; never delete a DB an engine still has open
+                        st.cache_resource.clear(); st.cache_data.clear()
+                        st.rerun()
 
 st.markdown("""
 <div class="hero">
@@ -460,6 +479,9 @@ with tabs[1]:
         rep_tag = st.selectbox("Dataset version", tags, index=tags.index("v1.1"), key="rep")
         n_edit = st.slider("Rows silently edited in place", 0, 2000, 400, step=100)
         go_rep = st.button("Run reproducibility test", type="primary")
+    if go_rep and not cooldown_ok(st.session_state, "repro", 5)[0]:
+        st.warning("Please wait a moment before re-running the test.")
+        go_rep = False
     if go_rep:
         base = load_version(rep_tag).drop_duplicates("flight_id").copy()
         base["weather_index"] = base["weather_index"].fillna(base["weather_index"].median())
@@ -569,7 +591,14 @@ with tabs[2]:
 
     st.subheader("🧪 Experiment: the leakage trap")
     if st.button("Train with naive join vs. point-in-time join", type="primary"):
-        st.session_state["leak"] = leakage_experiment("v2.0")
+        ok, left = cooldown_ok(st.session_state, "leak", 15)
+        if not ok:
+            st.warning(f"Please wait {left:.0f}s before running the experiment again.")
+        elif len(runs_dataframe()) >= MAX_RUNS:
+            st.warning(f"Run limit reached ({MAX_RUNS}). Ask an admin to rebuild the pipeline.")
+        else:
+            with st.spinner("Training both models…"):
+                st.session_state["leak"] = leakage_experiment("v2.0")
     if "leak" in st.session_state:
         res = st.session_state["leak"]
         bars = pd.DataFrame({"scenario": ["Naive join · offline test", "Naive join · in production",
@@ -596,8 +625,12 @@ with tabs[2]:
         as_of = st.date_input("Materialize as of", pd.Timestamp("2025-10-01"),
                               min_value=pd.Timestamp("2025-01-05"), max_value=pd.Timestamp("2025-10-01"))
         if st.button("Materialize to online store"):
-            counts = store.materialize(pd.Timestamp(as_of))
-            st.success(f"Pushed latest values: {counts}")
+            ok, left = cooldown_ok(st.session_state, "materialize")
+            if not ok:
+                st.warning(f"Please wait {left:.0f}s.")
+            else:
+                counts = store.materialize(pd.Timestamp(as_of))
+                st.success(f"Pushed latest values: {counts}")
         st.markdown("**Lookup**")
         lo = st.selectbox("Origin", list(AIRPORTS), key="lo")
         ld = st.selectbox("Destination", [a for a in AIRPORTS if a != lo], key="ld")
@@ -642,10 +675,18 @@ with tabs[3]:
             params["max_iter"] = st.slider("max_iter", 50, 500, 200, 50)
     with f3:
         t_author = st.selectbox("Logged by", [m["name"] for m in TEAM])
-        t_name = st.text_input("Run name", f"{t_model} | {t_tag}")
+        t_name = st.text_input("Run name", f"{t_model} | {t_tag}", max_chars=60,
+                               help="Letters, numbers and _ . , : | ( ) - only")
         if st.button("Train & log to MLflow", type="primary", width="stretch"):
-            with st.spinner("Training…"):
-                st.session_state["last_run"] = train_and_log(t_tag, t_model, params, t_store, t_name, t_author)
+            ok, left = cooldown_ok(st.session_state, "train", 10)
+            if not ok:
+                st.warning(f"Please wait {left:.0f}s before training again.")
+            elif len(runs_dataframe()) >= MAX_RUNS:
+                st.warning(f"Run limit reached ({MAX_RUNS}). Ask an admin to rebuild the pipeline.")
+            else:
+                with st.spinner("Training…"):
+                    st.session_state["last_run"] = train_and_log(t_tag, t_model, params, t_store,
+                                                                 sanitize_text(t_name), t_author)
     if "last_run" in st.session_state:
         r = st.session_state["last_run"]
         k = st.columns(6)
@@ -670,10 +711,13 @@ with tabs[3]:
         fig.update_traces(marker=dict(size=13, line=dict(width=1, color="white")))
         fig.update_layout(**PLOT); cc1.plotly_chart(fig, width="stretch")
         same = show[show["data"] == "v2.0"].dropna(subset=["F1"])
-        fig = px.bar(same, x="run", y="ROC-AUC", color="model", title="Like-for-like: runs on v2.0 only",
-                     color_discrete_sequence=[TEAL, MAGENTA, GREEN], text_auto=".3f")
-        fig.update_layout(**PLOT, yaxis_range=[0.5, same["ROC-AUC"].max() + .05], xaxis_title="")
-        cc2.plotly_chart(fig, width="stretch")
+        if same.empty:
+            cc2.info("No runs on v2.0 yet.")
+        else:
+            fig = px.bar(same, x="run", y="ROC-AUC", color="model", title="Like-for-like: runs on v2.0 only",
+                         color_discrete_sequence=[TEAL, MAGENTA, GREEN], text_auto=".3f")
+            fig.update_layout(**PLOT, yaxis_range=[0.5, same["ROC-AUC"].max() + .05], xaxis_title="")
+            cc2.plotly_chart(fig, width="stretch")
         st.markdown('<div class="lesson">Metrics are only comparable on the <b>same data version</b> (same '
                     'holdout window) — another reason the data version is logged with every run.</div>',
                     unsafe_allow_html=True)
@@ -686,19 +730,30 @@ with tabs[3]:
                 st.dataframe(reg, hide_index=True, width="stretch")
         with rg2:
             safe = show[show["leakage safe"] == "true"]
-            pick = st.selectbox("Register a run", safe["run_id"],
-                                format_func=lambda x: f"{safe.set_index('run_id').loc[x, 'run']} · "
-                                f"AUC {safe.set_index('run_id').loc[x, 'ROC-AUC']:.3f}")
-            promote_now = st.checkbox(f"Promote to @{CHAMPION_ALIAS}", value=False)
-            if st.button("Register model version", width="stretch"):
-                out = register_run(pick, promote=promote_now)
-                st.success(f"Registered {REGISTERED_MODEL} v{out['version']}"
-                           + (f" and promoted to @{CHAMPION_ALIAS}" if promote_now else ""))
-                st.rerun()
+            if safe.empty:
+                st.info("No leakage-safe runs to register yet.")
+            else:
+                pick = st.selectbox("Register a run", safe["run_id"],
+                                    format_func=lambda x: f"{safe.set_index('run_id').loc[x, 'run']} · "
+                                    f"AUC {safe.set_index('run_id').loc[x, 'ROC-AUC']:.3f}")
+                promote_now = st.checkbox(f"Promote to @{CHAMPION_ALIAS}", value=False)
+                if st.button("Register model version", width="stretch"):
+                    ok, left = cooldown_ok(st.session_state, "register")
+                    if not ok:
+                        st.warning(f"Please wait {left:.0f}s.")
+                    else:
+                        out = register_run(pick, promote=promote_now)
+                        st.success(f"Registered {REGISTERED_MODEL} v{out['version']}"
+                                   + (f" and promoted to @{CHAMPION_ALIAS}" if promote_now else ""))
+                        st.rerun()
             if not reg.empty:
                 pv = st.selectbox("Or move @champion to version", reg["version"].tolist())
                 if st.button("Promote", width="stretch"):
-                    promote(pv); st.success(f"@{CHAMPION_ALIAS} → v{pv}"); st.rerun()
+                    ok, left = cooldown_ok(st.session_state, "promote")
+                    if not ok:
+                        st.warning(f"Please wait {left:.0f}s.")
+                    else:
+                        promote(pv); st.success(f"@{CHAMPION_ALIAS} → v{pv}"); st.rerun()
     st.caption("Local MLflow UI:  `mlflow ui --backend-store-uri sqlite:///mlflow.db`")
 
 # ================================================================ 4. SERVING
@@ -806,6 +861,9 @@ curl -X POST localhost:8000/predict -H "Content-Type: application/json" \\
         n = st.slider("Flights in tomorrow's schedule", 10, 150, 60, 10)
         seed = st.number_input("Schedule seed", 0, 999, 7)
         run_batch = st.button("Score schedule", type="primary")
+    if run_batch and not cooldown_ok(st.session_state, "batch", 3)[0]:
+        st.warning("Please wait a moment before scoring again.")
+        run_batch = False
     if run_batch:
         rng = np.random.default_rng(int(seed))
         aps = list(AIRPORTS)

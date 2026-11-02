@@ -16,10 +16,13 @@ MLFLOW_DB_POINTER = ROOT / ".mlflow_db"   # names the active tracking DB (switch
 def mlflow_db_path():
     """Active MLflow SQLite file. A rebuild switches to a fresh file instead of
     deleting the one an open SQLAlchemy engine is still using."""
+    import re
     try:
-        return ROOT / MLFLOW_DB_POINTER.read_text().strip()
+        name = MLFLOW_DB_POINTER.read_text().strip()
     except OSError:
         return MLFLOW_DB
+    # only accept our own file-name pattern -> no path traversal via the pointer file
+    return ROOT / name if re.fullmatch(r"mlflow(-\d{10})?\.db", name) else MLFLOW_DB
 
 
 def new_mlflow_db():
@@ -27,6 +30,8 @@ def new_mlflow_db():
     name = f"mlflow-{int(time.time())}.db"
     MLFLOW_DB_POINTER.write_text(name)
     return ROOT / name
+
+
 MLFLOW_ARTIFACTS = ROOT / "mlartifacts"
 
 EXPERIMENT_NAME = "flight-delay-prediction"

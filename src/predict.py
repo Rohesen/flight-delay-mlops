@@ -66,12 +66,26 @@ def predict(carrier: str, origin: str, dest: str, departure: pd.Timestamp,
 
 
 def batch_predict(df: pd.DataFrame, store: FeatureStore | None = None) -> pd.DataFrame:
-    out = []
+    """Score many flights with ONE registry lookup and ONE batched model call."""
+    store = store or FeatureStore()
+    info = champion_info()
+    model = _load_cached(setup_mlflow(), str(info["version"]))
+    rows, cache = [], {}
     for r in df.itertuples():
-        p = predict(r.carrier, r.origin, r.dest, pd.Timestamp(r.departure), float(r.weather_index), store)
-        out.append({"carrier": r.carrier, "route": f"{r.origin}-{r.dest}", "departure": r.departure,
-                    "delay_probability": p["delay_probability"], "prediction": p["prediction"]})
-    return pd.DataFrame(out)
+        dep = pd.Timestamp(r.departure)
+        key = (r.origin, r.dest, r.carrier)
+        if key not in cache:
+            cache[key] = {k: v for k, v in store.get_online_features(*key).items() if not k.startswith("_")}
+        rows.append({"carrier": r.carrier, "origin": r.origin, "dest": r.dest, "dep_hour": dep.hour,
+                     "day_of_week": dep.dayofweek, "month": dep.month,
+                     "distance_km": round(_haversine(r.origin, r.dest), 1),
+                     "weather_index": float(r.weather_index), **cache[key]})
+    X = pd.DataFrame(rows)
+    X = X.astype({k: float for k in X.columns if k not in ("carrier", "origin", "dest")})
+    proba = model.predict_proba(X)[:, 1]
+    return pd.DataFrame({"carrier": df["carrier"].values, "route": (df["origin"] + "-" + df["dest"]).values,
+                         "departure": df["departure"].values, "delay_probability": proba.round(4),
+                         "prediction": ["DELAYED (>15 min)" if p >= 0.5 else "ON TIME" for p in proba]})
 
 
 AIRPORT_CODES = list(AIRPORTS)
