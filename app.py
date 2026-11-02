@@ -106,6 +106,7 @@ def bootstrap() -> bool:
     except Exception:
         ready = False
     if not ready:
+        new_mlflow_db()   # fresh tracking DB (an old engine may still point at a deleted file)
         run_all()
     return True
 
