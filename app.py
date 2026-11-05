@@ -105,6 +105,9 @@ div[data-baseweb="calendar"] {background:var(--panel) !important; border-color:v
 .stApp [data-testid="stTextInput"] div[data-rac], .stApp [data-testid="stNumberInput"] input,
 .stApp [data-testid="stTextInput"] input, .stApp [data-testid="stDateInput"] input {
        background-color:var(--panel) !important; border-color:var(--border) !important; color:var(--text) !important;}
+.stApp [data-testid="stDateInput"] div, .stApp [data-testid="stNumberInput"] div,
+.stApp [data-testid="stNumberInput"] button, .stApp [data-testid="stTextInput"] div {
+       background-color:var(--panel) !important; color:var(--text) !important; border-color:var(--border) !important;}
 .stApp [data-testid="stSelectbox"] svg, .stApp [data-testid="stDateInput"] svg {color:var(--muted); fill:currentColor;}
 [role="listbox"], [role="option"], [role="dialog"], div[data-rac][role="grid"] {background-color:var(--panel) !important;
        color:var(--text) !important;}
@@ -209,6 +212,9 @@ if not getattr(DeltaGenerator.plotly_chart, "_themed", False):
 
     _themed_plotly_chart._themed = True
     DeltaGenerator.plotly_chart = _themed_plotly_chart
+
+# `st.plotly_chart` is bound to the main container at import time, so patch it too
+st.plotly_chart = lambda fig, *a, **k: DeltaGenerator.plotly_chart(st._main, fig, *a, **k)
 
 
 def gv(dot: str, **kw):
@@ -788,7 +794,7 @@ with tabs[4]:
             mode="gauge+number", value=p * 100, number={"suffix": "%", "font": {"size": 46}},
             title={"text": f"{car} {org}→{dst} · {dep:%d %b %H:%M}<br><b>{res['prediction']}</b>"},
             gauge={"axis": {"range": [0, 100]}, "bar": {"color": RED if p >= .5 else GREEN},
-                   "bgcolor": "rgba(14,20,36,.6)", "bordercolor": "#1E2A44",
+                   "bgcolor": T["panel2"], "bordercolor": T["border"],
                    "steps": [{"range": [0, 35], "color": "rgba(57,255,136,.12)"}, {"range": [35, 50], "color": "rgba(255,195,0,.12)"},
                              {"range": [50, 100], "color": "rgba(255,59,107,.14)"}],
                    "threshold": {"line": {"color": NAVY, "width": 3}, "value": 50}}))
