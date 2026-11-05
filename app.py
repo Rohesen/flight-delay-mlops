@@ -45,6 +45,9 @@ THEMES = {
     "Emerald":         {**_D, **dict(bg="#06150E", side="#081B12", panel="#0D2419", panel2="#0B2016", border="#1D4430",
                            acc="#34D399", acc2="#A7F3D0", acc_rgb="52,211,153", h1="#0D2A1C", h2="#14432D",
                            text="#E6F4EC", head="#F3FBF6", sub="#BBF7D0", muted="#8DB09C")},
+    "Light · Paper":   {**_L, **dict(bg="#FAFAF7", side="#F2F1EC", panel="#FFFFFF", panel2="#FBFBF8", border="#D6D3CC",
+                           acc="#3F3F46", acc2="#18181B", acc_rgb="63,63,70", h1="#FFFFFF", h2="#F1EFEA",
+                           text="#1C1917", head="#0C0A09", sub="#27272A", muted="#71717A")},
     "Light · Classic": {**_L, **dict(bg="#F5F7FB", side="#EEF2F8", panel="#FFFFFF", panel2="#F8FAFD", border="#D9E1EC",
                            acc="#1D4ED8", acc2="#1E40AF", acc_rgb="29,78,216", h1="#FFFFFF", h2="#E8EFFC",
                            text="#1E293B", head="#0F172A", sub="#1E3A8A", muted="#64748B")},
@@ -64,7 +67,9 @@ NAVY, TEAL = T["text"], T["acc"]
 AMBER, RED, GREEN, GREY = ("#D97706", "#DC2626", "#059669", "#7C3AED") if LIGHT else ("#FBBF24", "#F87171", "#34D399", "#A78BFA")
 if THEME_NAME == "Neon Glow":
     AMBER, RED, GREEN, GREY = "#FFC300", "#FF3B6B", "#39FF88", "#B26BFF"
-MAGENTA = "#C026D3" if LIGHT else ("#FF2BD6" if T["glow"] else "#C084FC")
+if THEME_NAME == "Light · Paper":   # muted, print-friendly data colours
+    AMBER, RED, GREEN, GREY = "#B45309", "#B91C1C", "#3F6212", "#A8A29E"
+MAGENTA = "#9A3412" if THEME_NAME == "Light · Paper" else "#C026D3" if LIGHT else ("#FF2BD6" if T["glow"] else "#C084FC")
 BG, PANEL, BORDER, MUTED = T["bg"], T["panel"], T["border"], T["muted"]
 PLOT = dict(template="plotly_white" if LIGHT else "plotly_dark", paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor=T["panel2"], font=dict(family="Inter, Segoe UI, sans-serif", color=NAVY, size=13),
@@ -279,9 +284,9 @@ def owner(i: int):
 
 # ---------------------------------------------------------------- sidebar
 with st.sidebar:
-    st.selectbox("🎨 Theme", list(THEMES), key="theme",
+    st.selectbox("Theme", list(THEMES), key="theme",
                  help="Dark, Neon Glow, or Light backgrounds (Light · Classic is best for projectors)")
-    st.markdown("### ✈️ Flight Delay MLOps")
+    st.markdown("### Flight Delay MLOps")
     st.caption("DSE ZG529 · Data Management for ML\nExperiential Learning Assignment")
     st.markdown("**Team**")
     for m in TEAM:
@@ -291,9 +296,9 @@ with st.sidebar:
     try:
         ch = champion_info()
         st.markdown("**Live pipeline status**")
-        st.markdown(f"🗂️ Data versions: **{len(versioning.list_versions())}**")
-        st.markdown(f"🧮 Feature store built from: **{store.offline_metadata().get('data_version')}**")
-        st.markdown(f"🏆 Champion: **v{ch['version']}** · {ch['model_type']} · AUC **{ch['roc_auc']:.3f}**")
+        st.markdown(f"Data versions: **{len(versioning.list_versions())}**")
+        st.markdown(f"Feature store built from: **{store.offline_metadata().get('data_version')}**")
+        st.markdown(f"Champion: **v{ch['version']}** · {ch['model_type']} · AUC **{ch['roc_auc']:.3f}**")
     except Exception as e:
         st.warning(f"Pipeline not ready: {e}")
     st.divider()
@@ -302,12 +307,12 @@ with st.sidebar:
         _admin_pw = st.secrets.get("ADMIN_PASSWORD")
     except Exception:
         _admin_pw = os.environ.get("ADMIN_PASSWORD")
-    with st.expander("🔒 Admin"):
+    with st.expander("Admin"):
         if not _admin_pw:
             st.caption("Destructive actions are disabled on the public app. Set an `ADMIN_PASSWORD` secret to enable.")
         else:
             entered = st.text_input("Admin password", type="password", max_chars=128, key="admin_pw")
-            if st.button("♻️ Rebuild entire pipeline", width="stretch",
+            if st.button("Rebuild entire pipeline", width="stretch",
                          help="Deletes versions, feature store and MLflow DB, then reruns every stage"):
                 if not check_admin(entered, _admin_pw):
                     st.error("Incorrect admin password.")
@@ -327,14 +332,14 @@ with st.sidebar:
 
 st.markdown("""
 <div class="hero">
-  <h1>✈️ Flight Delay Prediction — an End-to-End MLOps Pipeline</h1>
+  <h1>Flight Delay Prediction — an End-to-End MLOps Pipeline</h1>
   <p>Predicting whether an Indian domestic flight departs &gt;15 min late, with every stage of the
   data &amp; model lifecycle made reproducible, traceable and servable.</p>
   <span class="pill">DVC-style data versioning</span><span class="pill m">Feature store · point-in-time joins</span>
   <span class="pill g">MLflow tracking &amp; registry</span><span class="pill y">Prediction service · lineage</span>
 </div>""", unsafe_allow_html=True)
 
-tabs = st.tabs(["🏠 Overview", "① Data Versioning", "② Feature Store",
+tabs = st.tabs(["Overview", "① Data Versioning", "② Feature Store",
                 "③ Experiments & Registry", "④ Prediction Service"])
 
 # ================================================================ OVERVIEW
@@ -450,7 +455,7 @@ with tabs[1]:
                           + "".join(f'"{m["tag"]}"[label="{m["tag"]}\\nmd5 {m["outs"][0]["md5"][:8]}\\n{m["rows"]:,} rows"];' for m in versions)
                           + 'edge[color="#C084FC"];' + "".join(f'"{m["parent"]}"->"{m["tag"]}";' for m in versions if m["parent"]) + "}")
 
-    st.subheader("🔍 Checkout & compare two versions")
+    st.subheader("Checkout & compare two versions")
     tags = [m["tag"] for m in versions]
     c1, c2 = st.columns(2)
     ta = c1.selectbox("Version A", tags, index=0)
@@ -478,7 +483,7 @@ with tabs[1]:
     with st.expander(f"Preview checked-out data · {tb}"):
         st.dataframe(B.head(200), hide_index=True, width="stretch")
 
-    st.subheader("🧪 Experiment: what breaks without versioning?")
+    st.subheader("Experiment: what breaks without versioning?")
     st.caption("Train the same model twice. Between the two runs, someone 'fixes' a few rows in place.")
     e1, e2 = st.columns([1, 2])
     with e1:
@@ -537,11 +542,11 @@ with tabs[2]:
                 unsafe_allow_html=True)
     cols = st.columns(3)
     for col, (name, fv) in zip(cols, FEATURE_VIEWS.items()):
-        col.markdown(f'<div class="card"><h4>🧩 {name}</h4><p><b>entity:</b> {fv.entity} · <b>TTL:</b> '
+        col.markdown(f'<div class="card"><h4>{name}</h4><p><b>entity:</b> {fv.entity} · <b>TTL:</b> '
                      f'{fv.ttl_days} d<br>{fv.description}<br><span class="mono">{"<br>".join(fv.features)}</span>'
                      f'</p></div>', unsafe_allow_html=True)
     st.write("")
-    st.subheader("📚 Offline store — feature history")
+    st.subheader("Offline store — feature history")
     o1, o2, o3 = st.columns([1, 1, 2])
     view = o1.selectbox("Feature view", list(FEATURE_VIEWS))
     fv = FEATURE_VIEWS[view]
@@ -554,7 +559,7 @@ with tabs[2]:
                   color_discrete_sequence=[TEAL, MAGENTA, GREEN, AMBER, GREY, RED])
     fig.update_layout(**PLOT); st.plotly_chart(fig, width="stretch")
 
-    st.subheader("⏱️ Point-in-time join vs. naive join")
+    st.subheader("Point-in-time join vs. naive join")
     st.caption("For one flight, which feature value is the model allowed to see?")
     pit_df, leaky_df = build_dataset("v2.0"), build_dataset("v2.0", leaky=True)
     p1, p2 = st.columns([1, 2])
@@ -595,7 +600,7 @@ with tabs[2]:
                               title="Outcomes the naive join leaks (red = delayed)", showlegend=False)
             st.plotly_chart(fig, width="stretch")
 
-    st.subheader("🧪 Experiment: the leakage trap")
+    st.subheader("Experiment: the leakage trap")
     if st.button("Train with naive join vs. point-in-time join", type="primary"):
         ok, left = cooldown_ok(st.session_state, "leak", 15)
         if not ok:
@@ -625,7 +630,7 @@ with tabs[2]:
                     '<div class="lesson">The run was logged to MLflow tagged <span class="mono">leakage_safe=false, '
                     'stage=rejected</span> so it can never be promoted by mistake.</div>', unsafe_allow_html=True)
 
-    st.subheader("⚡ Online store — materialize & look up")
+    st.subheader("Online store — materialize & look up")
     m1, m2 = st.columns([1, 2])
     with m1:
         as_of = st.date_input("Materialize as of", pd.Timestamp("2025-10-01"),
@@ -661,7 +666,7 @@ with tabs[3]:
                 'which hyper-parameters, which data? <b>Fix:</b> every run logs parameters, metrics, artifacts, the '
                 'model itself and the exact dataset hash; promotion to production happens through a registry '
                 'alias, never by copying files.</div>', unsafe_allow_html=True)
-    st.subheader("🚀 Launch a tracked experiment")
+    st.subheader("Launch a tracked experiment")
     f1, f2, f3 = st.columns(3)
     with f1:
         t_tag = st.selectbox("Data version", [m["tag"] for m in versioning.list_versions()], index=2)
@@ -702,7 +707,7 @@ with tabs[3]:
 
     runs = runs_dataframe()
     if not runs.empty:
-        st.subheader("📒 Run history")
+        st.subheader("Run history")
         show = pd.DataFrame({
             "run": runs["tags.mlflow.runName"], "data": runs["params.data_version"],
             "model": runs["params.model_type"], "feature store": runs.get("params.use_feature_store"),
@@ -728,7 +733,7 @@ with tabs[3]:
                     'holdout window) — another reason the data version is logged with every run.</div>',
                     unsafe_allow_html=True)
 
-        st.subheader("🏛️ Model registry")
+        st.subheader("Model registry")
         rg1, rg2 = st.columns([1.6, 1])
         reg = registry_versions()
         with rg1:
@@ -779,7 +784,7 @@ with tabs[4]:
     st.write("")
     i1, i2 = st.columns([1, 1.5])
     with i1:
-        st.subheader("✈️ Score a flight")
+        st.subheader("Score a flight")
         car = st.selectbox("Carrier", list(CARRIERS) + [NEW_CARRIER[0]], index=3)
         org = st.selectbox("Origin", list(AIRPORTS), index=0)
         dst = st.selectbox("Destination", [a for a in AIRPORTS if a != org], index=0)
@@ -807,7 +812,7 @@ with tabs[4]:
         fig.add_hline(y=.5, line_dash="dot", line_color=RED)
         fig.update_layout(**PLOT, height=250, yaxis_tickformat=".0%"); st.plotly_chart(fig, width="stretch")
 
-    st.subheader("🧊 3D risk surface — departure hour × weather")
+    st.subheader("3D risk surface — departure hour × weather")
     hrs = list(range(5, 24)); wxs = [round(x, 2) for x in np.linspace(0, 3, 16)]
     Z = risk_grid(car, org, dst, pd.Timestamp(dd), hrs, wxs, store)
     s1, s2 = st.columns([1.7, 1])
@@ -861,7 +866,7 @@ curl -X POST localhost:8000/predict -H "Content-Type: application/json" \\
   -d '{"carrier":"%s","origin":"%s","dest":"%s","departure":"%s","weather_index":%s}'""" %
                 (car, org, dst, dep.isoformat(), wx), language="bash")
 
-    st.subheader("📦 Batch scoring")
+    st.subheader("Batch scoring")
     b1, b2 = st.columns([1, 2.2])
     with b1:
         n = st.slider("Flights in tomorrow's schedule", 10, 150, 60, 10)
