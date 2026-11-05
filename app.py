@@ -171,13 +171,13 @@ div[data-testid="stPlotlyChart"], div[data-testid="stGraphVizChart"] {background
 </style>""" % {**T, "sh": SH, "shh": SH_HOVER}
 
 if LIGHT:   # tables are canvas-drawn in the app's dark base theme -> invert them for light pages
+    _tbl_filter = "invert(1) hue-rotate(180deg) contrast(.92)" + (" saturate(0)" if THEME_NAME == "Light · Paper" else "")
     _css += """<style>
-div[data-testid="stDataFrame"] > div {filter: invert(1) hue-rotate(180deg) contrast(.92);}
+div[data-testid="stDataFrame"] > div {filter: """ + _tbl_filter + """;}
 div[data-testid="stCode"] pre {border:1px solid var(--border);}
 </style>"""
 if THEME_NAME == "Light · Paper":   # strip the base theme's teal from canvas tables, sliders and toggles
     _css += """<style>
-div[data-testid="stDataFrame"] > div {filter: invert(1) hue-rotate(180deg) contrast(.92) saturate(0);}
 [data-testid="stSlider"], [data-testid="stCheckbox"], .stToggle, [data-testid="stMultiSelect"] span {filter: grayscale(1);}
 </style>"""
 if T["glow"]:   # neon: glows, animated rainbow edge, glowing numbers and cards
