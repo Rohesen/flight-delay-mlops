@@ -175,6 +175,11 @@ if LIGHT:   # tables are canvas-drawn in the app's dark base theme -> invert the
 div[data-testid="stDataFrame"] > div {filter: invert(1) hue-rotate(180deg) contrast(.92);}
 div[data-testid="stCode"] pre {border:1px solid var(--border);}
 </style>"""
+if THEME_NAME == "Light · Paper":   # strip the base theme's teal from canvas tables, sliders and toggles
+    _css += """<style>
+div[data-testid="stDataFrame"] > div {filter: invert(1) hue-rotate(180deg) contrast(.92) saturate(0);}
+[data-testid="stSlider"], [data-testid="stCheckbox"], .stToggle, [data-testid="stMultiSelect"] span {filter: grayscale(1);}
+</style>"""
 if T["glow"]:   # neon: glows, animated rainbow edge, glowing numbers and cards
     _css += """<style>
 .hero {background: linear-gradient(115deg, rgba(255,43,214,.20), rgba(157,78,221,.16) 45%, rgba(0,240,255,.20));
